@@ -3,9 +3,7 @@
 *.suo
 *.user
 *.userosscache
-*.vcxproj*
-*.vspscc
-*.vssscc
+
 *.vscache
 ipch/
 *.aps
