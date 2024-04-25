@@ -8,10 +8,14 @@ void RunChatSession(ChatClient& client)
         return;
     }
 
-    std::thread th(&ChatClient::ReceiveChat, &client);
+    std::thread th(&ChatClient::ReceiveChat, &client); // 에러 반환을 위해 먼저 받을 수 있도록...
+
+    client.Main();
+
     string text;
     while (getline(cin, text)) {
         if (text == "/종료") {
+            client.SendMsg(text);
             client.DisConnnectSocket();
             break;
         }

@@ -11,6 +11,10 @@ public:
 	int ConnnectSocket();
 	void DisConnnectSocket();
 
+	void Main();
+	void CreateAccount();
+	void Login();
+
 	int ReceiveChat();
 	void SendMsg(const std::string& InMsg);
 
@@ -25,4 +29,6 @@ private:
 
 	int Retry_Count = 0;
 	const int MAX_TRY_COUNT = 10;
+
+	bool bConnect = false;
 };

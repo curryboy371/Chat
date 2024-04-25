@@ -2,19 +2,35 @@
 
 #include <WinSock2.h>
 #include <winsock2.h>
-#include <ws2tcpip.h> // ÇÊ¿äÇÑ °æ¿ì
-#pragma comment(lib, "Ws2_32.lib")
-#include <conio.h> 
+#include <ws2tcpip.h> // ï¿½Ê¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 #include <Windows.h>
 
-
+#include <conio.h> 
 #include <iostream>
+
 #include <string>
-#include <thread>
-#include <vector>
-#include <string>
-//#include <mysql/jdbc.h>
 #include <sstream>
+
+#include <vector>
+#include <map>
+#include <string>
+
+#include <thread>
+#include <mutex>
+
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
+#include <mysql/jdbc.h>
+
+#include <nlohmann/json.hpp>
+
+
+#pragma comment(lib, "Ws2_32.lib")
+
+
+using json = nlohmann::json;
 
 
 using std::cout;

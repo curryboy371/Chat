@@ -72,15 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Libraries\$(Configuration)\</OutDir>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)3rdparty\boost_1_85_0;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Libraries\$(Configuration)\</OutDir>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)3rdparty\boost_1_85_0;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Libraries\$(Configuration)\</OutDir>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)3rdparty\boost_1_85_0;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Libraries\$(Configuration)\</OutDir>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)3rdparty\boost_1_85_0;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

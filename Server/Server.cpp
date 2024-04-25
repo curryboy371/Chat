@@ -1,39 +1,11 @@
 ﻿#include "pch.h"
 
 #include "ChattingServer.h"
+#include "DB.h"
 
-void mainMenu() {
-    cout << "\n";
-    cout << " "; cout << "*************************************************\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*       *******      *       *       *  *       *\n";
-    cout << " "; cout << "*          *        * *      *       * *        *\n";
-    cout << " "; cout << "*          *       *****     *       **         *\n";
-    cout << " "; cout << "*          *      *     *    *       * *        *\n";
-    cout << " "; cout << "*          *     *       *   *****   *  *       *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                 < SERVER ON >                 *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*                                               *\n";
-    cout << " "; cout << "*************************************************\n\n";
-}
 
 int main()
 {
-    system("color 06");
-    //startSql();
-    mainMenu();
     WSADATA wsa;
 
     ChattingServer Server;

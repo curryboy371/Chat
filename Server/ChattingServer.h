@@ -1,9 +1,13 @@
 #pragma once
 
+#include "DB.h"
+
+
 struct SOCKET_INFO
 {
     SOCKET sck = 0;
     string user = "";
+    bool bIsConnect = false;
 };
 
 class ChattingServer
@@ -18,19 +22,40 @@ public:
 
     void AddClient();
 
-    void DeleteClient(int index);
+    void DeleteClient(const boost::uuids::uuid& Inuid);
 
     void ServerSendMessage(const char* msg);
 
-    void ClientSendMessage(const char* msg, const int sender_idx);
+    void ClientSendMessage(const char* msg, const boost::uuids::uuid& Inuid);
 
-    void SendWhisper(int position, std::string sbuff, int index);
 
-    void RecvMsg(int index);
+#pragma region Receive
+
+    void Recv(const boost::uuids::uuid& Inuid);
+    void RecvCreateAccount(const boost::uuids::uuid& Inuid, const json& InjsonData);
+    void RecvLogin(const boost::uuids::uuid& Inuid, const json& InjsonData);
+    void RecvMsg(const boost::uuids::uuid& Inuid, const json& InjsonData);
+
+
+#pragma endregion Receive
+
+#pragma region DB
+    void DBInit();
+    void CreateAccount(const boost::uuids::uuid& Inuid, const std::string& name, const std::string& passwd);
+
+#pragma endregion DB
+
+
 
 public:
-    std::vector<SOCKET_INFO> sck_list; // 연결된 클라이언트 소켓들을 저장할 배열 선언.
-    SOCKET_INFO server_sock; // 서버 소켓에 대한 정보를 저장할 변수 선언.
-    int client_count = 0; // 현재 접속해 있는 클라이언트를 count 할 변수 선언.
-};
+    std::map<boost::uuids::uuid, SOCKET_INFO> sck_Map;
+    SOCKET_INFO server_sock;
+    int client_count = 0;
 
+
+private:
+    std::mutex mutex; // Mutex for synchronizing access to sck_Map
+
+    DB myDB;
+
+};

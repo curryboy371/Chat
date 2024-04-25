@@ -18,10 +18,15 @@ int ChatClient::ReceiveChat()
     while (true) {
         ZeroMemory(&buf, MAX_SIZE);
         if (recv(client_sock, buf, MAX_SIZE, 0) > 0) {
+
+            if (msg == "loginsuccess")
+            {
+                bConnect = true;
+            }
             //textColor(7, 0);
             msg = buf;
-            //´Ğ³×ÀÓ : ¸Ş½ÃÁö
-            std::stringstream ss(msg);  // ¹®ÀÚ¿­À» ½ºÆ®¸²È­
+            //ï¿½Ğ³ï¿½ï¿½ï¿½ : ï¿½Ş½ï¿½ï¿½ï¿½
+            std::stringstream ss(msg);  // ï¿½ï¿½ï¿½Ú¿ï¿½ï¿½ï¿½ ï¿½ï¿½Æ®ï¿½ï¿½È­
             string user;
             ss >> user;
             if (user != my_nick) cout << buf << endl;
@@ -35,7 +40,7 @@ int ChatClient::ReceiveChat()
 
 void ChatClient::SendMsg(const std::string& InMsg)
 {
-    const char* buffer = InMsg.c_str(); // stringÇüÀ» char* Å¸ÀÔÀ¸·Î º¯È¯
+    const char* buffer = InMsg.c_str();
     send(client_sock, buffer, (int)strlen(buffer), 0);
 }
 
@@ -43,7 +48,7 @@ void ChatClient::CreateSocket()
 {
     client_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (client_sock == INVALID_SOCKET) {
-        // ¿¡·¯ Ã³¸®: ¼ÒÄÏ »ı¼º ½ÇÆĞ
+        // ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         perror("Socket creation failed");
         return;
     }
@@ -52,7 +57,7 @@ void ChatClient::CreateSocket()
     client_addr.sin_port = htons(7777);
 
     if (InetPton(AF_INET, TEXT("127.0.0.1"), &client_addr.sin_addr) != 1) {
-        // ¿¡·¯ Ã³¸®: IP ÁÖ¼Ò º¯È¯ ½ÇÆĞ
+        // ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½: IP ï¿½Ö¼ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ï¿½
         perror("IP address conversion failed");
         closesocket(client_sock);
         return;
@@ -97,3 +102,78 @@ void ChatClient::DisConnnectSocket()
     CloseSocket();
 }
 
+void ChatClient::Main()
+{
+    if (!bConnect)
+    {
+        int Select = 0;
+        cout << "1ìƒì„±, 2ë¡œê·¸ì¸ 3ì¢…ë£Œ" << '\n';
+        cin >> Select;
+
+        switch (Select)
+        {
+        case 1:
+            CreateAccount();
+            break;
+        case 2:
+            Login();
+            break;
+        default:
+            if (!bConnect)
+            {
+                cout << "error";
+            }
+            break;
+        }
+    }
+
+}
+
+void ChatClient::CreateAccount()
+{
+    std::string username;
+    std::string password;
+
+    cout << "username : ";
+    cin >> username;
+    cout << '\n';
+
+    cout << "password : ";
+    cin >> password;
+
+    // JSON ë°ì´í„° ìƒì„±
+    json jsonData;
+
+    jsonData["type"] = "CreateAccount";
+    jsonData["content"] = { {"username", username}, {"password", password} };
+
+    std::string message = jsonData.dump();
+    send(client_sock, message.c_str(), (int)strlen(message.c_str()), 0);
+
+    Main();
+}
+
+void ChatClient::Login()
+{
+    std::string username;
+    std::string password;
+
+    cout << "username : ";
+    cin >> username;
+    cout << '\n';
+
+    cout << "password : ";
+    cin >> password;
+
+
+    // JSON ë°ì´í„° ìƒì„±
+    json jsonData;
+
+    jsonData["type"] = "Login";
+    jsonData["content"] = { {"username", username}, {"password", password} };
+
+    std::string message = jsonData.dump();
+    send(client_sock, message.c_str(), (int)strlen(message.c_str()), 0);
+
+    Main();
+}

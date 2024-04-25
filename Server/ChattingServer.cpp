@@ -16,18 +16,18 @@ void ChattingServer::ServerInit()
 
     SOCKADDR_IN server_addr = {};
 
-    server_addr.sin_family = AF_INET; // internet type socket
+    server_addr.sin_family = AF_INET;
 
-    server_addr.sin_port = htons(7777); // 127.0.0.1:7777 //127 ¾Æ³Ä?
+    server_addr.sin_port = htons(7777); 
 
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);   // AnyÀÎ °æ¿ì´Â È£½ºÆ®¸¦ 127.0.0.1·Î Àâ¾Æµµ µÇ°í localhost·Î Àâ¾Æµµ µÇ°í ¾çÂÊ ´Ù Çã¿ëÇÏ°Ô ÇÒ ¼ö ÀÖ´Ù. ±×°ÍÀÌ INADDR_ANYÀÌ´Ù.
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    bind(server_sock.sck, (sockaddr*)&server_addr, sizeof(server_addr));
 
-    bind(server_sock.sck, (sockaddr*)&server_addr, sizeof(server_addr)); // ¼³Á¤µÈ ¼ÒÄÏ Á¤º¸¸¦ ¼ÒÄÏ¿¡ ¹ÙÀÎµùÇÑ´Ù.
-
-    listen(server_sock.sck, SOMAXCONN); // ¼ÒÄÏÀ» ´ë±â »óÅÂ·Î ±â´Ù¸°´Ù.
+    listen(server_sock.sck, SOMAXCONN); 
 
     server_sock.user = "server";
 
+    DBInit();
 }
 
 void ChattingServer::ServerRelease()
@@ -40,116 +40,197 @@ void ChattingServer::AddClient()
 {
     SOCKADDR_IN addr = {  };
     int addrsize = sizeof(addr);
-    char buf[MAX_SIZE] = {};
+    char buff[MAX_SIZE] = {};
 
-    ZeroMemory(&addr, addrsize); // addrÀÇ ¸Ş¸ğ¸® ¿µ¿ªÀ» 0À¸·Î ÃÊ±âÈ­
+    memset(&addr, 0, addrsize);
 
     SOCKET_INFO new_client = {};
 
     new_client.sck = accept(server_sock.sck, (sockaddr*)&addr, &addrsize);
+    boost::uuids::uuid new_uuid = boost::uuids::random_generator()();
 
-    recv(new_client.sck, buf, MAX_SIZE, 0); // Winsock2ÀÇ recv ÇÔ¼ö. client °¡ º¸³½ nicknameÀ» ¹ŞÀ½.
+    {
+        std::lock_guard<std::mutex> guard(mutex);
 
-    new_client.user = string(buf);
+        sck_Map.insert(std::make_pair(new_uuid, new_client)); 
+    }
 
-    string msg = ">" + new_client.user + " enter the room";
-
-    cout << msg << '\n';
-    sck_list.push_back(new_client);
-
-    //print_clients();
-
-    // ¿©±â!!
-    std::thread th(&ChattingServer::RecvMsg, this, client_count);
-    
+    std::thread th(&ChattingServer::Recv, this, new_uuid);
     th.detach(); //?
-    client_count++;
-    cout << "¢¹ÇöÀç Á¢¼ÓÀÚ ¼ö : " << client_count << "¸í" << endl;
-    ServerSendMessage(msg.c_str());
 }
 
-void ChattingServer::DeleteClient(int index)
+void ChattingServer::DeleteClient(const boost::uuids::uuid& Inuid)
 {
-    std::thread th(&ChattingServer::AddClient, this);
-    closesocket(sck_list[index].sck);
-    client_count--;
-    cout << "¢¹ÇöÀç Á¢¼ÓÀÚ ¼ö : " << client_count << "¸í" << endl;
-    sck_list.erase(sck_list.begin() + index);
-    th.join();
+    //std::thread th(&ChattingServer::AddClient, this);
+    closesocket(sck_Map[Inuid].sck);
+
+    {
+        std::lock_guard<std::mutex> guard(mutex);
+        sck_Map.erase(Inuid);
+        client_count--;
+    }
+
+    cout << "DeleteClient : " << client_count << "ggg" << endl;
+    //th.join();
 }
 
 void ChattingServer::ServerSendMessage(const char* msg)
 {
     // broadcast 
-
-    for (int i = 0; i < client_count; ++i)
+    for (const auto& sck_pair : sck_Map)
     {
-        send(sck_list[i].sck, msg, MAX_SIZE, 0); // ¸ğµç client¿¡°Ô Àü¼Û
-    }
-}
-
-void ChattingServer::ClientSendMessage(const char* msg, const int sender_idx)
-{
-    for (int i = 0; i < client_count; ++i)
-    {
-        if (i != sender_idx)
+        if (sck_pair.second.bIsConnect)
         {
-            send(sck_list[i].sck, msg, MAX_SIZE, 0); // ³ª¸¦ Á¦¿ÜÇÑ ¸ğµç client¿¡°Ô Àü¼Û
+            send(sck_pair.second.sck, msg, MAX_SIZE, 0);
         }
     }
 }
 
-void ChattingServer::SendWhisper(int position, std::string sbuff, int index)
+void ChattingServer::ClientSendMessage(const char* msg, const boost::uuids::uuid& Inuid)
 {
-    int cur_position = position + 1;
-    position = sbuff.find(" ", cur_position);
-    int len = position - cur_position;
-    std::string receiver = sbuff.substr(cur_position, len);
-    cur_position = position + 1;
-    std::string dm = sbuff.substr(cur_position);
-    std::string msg = "±Ó¼Ó¸» [" + sck_list[index].user + "] : " + dm;
-
-    for (int i = 0; i < client_count; ++i)
+    for (const auto& sck_pair: sck_Map)
     {
-        if (receiver.compare(sck_list[i].user) == 0)
+        if (sck_pair.second.bIsConnect)
         {
-            send(sck_list[i].sck, msg.c_str(), MAX_SIZE, 0);
+            if (sck_pair.first != Inuid)
+            {
+                send(sck_Map[Inuid].sck, msg, MAX_SIZE, 0);
+            }
         }
+
     }
 }
 
-void ChattingServer::RecvMsg(int index)
+void ChattingServer::Recv(const boost::uuids::uuid& Inuid)
 {
     char buff[MAX_SIZE] = {};
-    std::string msg = "";
 
     while (true)
     {
-        ZeroMemory(&buff, MAX_SIZE);
+        memset(&buff, 0, MAX_SIZE);
 
-        if (recv(sck_list[index].sck, buff, MAX_SIZE, 0) > 0)
+        if (recv(sck_Map[Inuid].sck, buff, MAX_SIZE, 0) > 0)
         {
-            // ¿À·ù ¹ß»ıÇÏÁö ¾ÊÀ¸¸é recv´Â ¼ö½ÅµÈ ¹ÙÀÌÆ® ¼ö¸¦ ¹İÈ¯ÇÔ.
-            // 0º¸´Ù Å©´Ù´Â °ÍÀº msg°¡ ¿Â °Í.
+            json receivedJson = json::parse(buff);
 
-            std::string whisper(buff);
-            //int position = whisper.find(" ", 0);
-            //int message = position - 0;
-            //std::string flag = whisper.substr(0, message);
-            if (string(buff) == "/Á¾·á")
+            if (receivedJson["type"] == "CreateAccount")
             {
-                msg = ">" + sck_list[index].user + "ÅğÀå";
-                cout << msg << endl;
-                ServerSendMessage(msg.c_str());
-                DeleteClient(index);
-                return;
+                RecvCreateAccount(Inuid, receivedJson);
             }
-            else
+            else if (receivedJson["type"] == "Login")
             {
-                cout << whisper << endl;
-                ClientSendMessage(whisper.c_str(), index);
+                RecvLogin(Inuid, receivedJson);
             }
-
+            else if (receivedJson["type"] == "Message")
+            {
+                RecvMsg(Inuid, receivedJson);
+            }
+            else if (receivedJson["type"] == "Exit")
+            {
+                break;
+            }
         }
     }
+}
+
+void ChattingServer::RecvCreateAccount(const boost::uuids::uuid& Inuid, const json& InjsonData)
+{
+    string username = InjsonData["content"]["username"];
+    string password = InjsonData["content"]["password"];
+
+    string msg;
+    if (username.empty() || password.empty())
+    {
+        msg = "invaild account info!!!";
+        send(sck_Map[Inuid].sck, msg.c_str(), MAX_SIZE, 0);
+        return;
+    }
+
+    CreateAccount(Inuid, username, password);
+}
+
+void ChattingServer::RecvLogin(const boost::uuids::uuid& Inuid, const json& InjsonData)
+{
+    // ê²€ì¦í•´ì£¼ê³ .
+    string username = InjsonData["content"]["username"];
+    string password = InjsonData["content"]["password"];
+
+    int result = myDB.UserLoginCheck(username, password);
+
+    if (result == 0)
+    {
+
+        send(sck_Map[Inuid].sck, "loginsuccess", MAX_SIZE, 0);
+
+
+        sck_Map[Inuid].bIsConnect = true;
+        string msg = ">" + username + " enter the room";
+        cout << msg << '\n';
+        client_count++;
+        cout << "AddClient : " << client_count << "" << endl;
+        ServerSendMessage(msg.c_str());
+    }
+    else
+    {
+        string errmsg;
+        if (result == 10000)
+        {
+            errmsg = "invaild account info";
+        }
+        else
+        {
+            errmsg = "unknown error e " + result;
+        }
+        send(sck_Map[Inuid].sck, errmsg.c_str(), MAX_SIZE, 0);
+    }
+
+}
+
+void ChattingServer::RecvMsg(const boost::uuids::uuid& Inuid, const json& InjsonData)
+{
+    string msg = InjsonData["content"]["message"];
+
+    if (msg == "/Exit")
+    {
+        msg = ">" + sck_Map[Inuid].user + "Exit";
+        cout << msg << endl;
+        ServerSendMessage(msg.c_str());
+        DeleteClient(Inuid);
+        return;
+    }
+    else
+    {
+        cout << msg << endl;
+        ClientSendMessage(msg.c_str(), Inuid);
+    }
+}
+
+void ChattingServer::DBInit()
+{
+    myDB.DBConnect();
+}
+
+void ChattingServer::CreateAccount(const boost::uuids::uuid& Inuid, const std::string& name, const std::string& passwd)
+{
+    int result = myDB.UserTableAdd(name, passwd);
+    
+    string msg;
+
+    if (result == 0)
+    {
+        msg = "create account success " + name;
+    }
+    if (result != 0)
+    {
+        switch (result)
+        {
+        case 1062:
+            msg = "duplicated name";
+            break;
+        default:
+            msg = "unknown error";
+            break;
+        }
+    }
+    send(sck_Map[Inuid].sck, msg.c_str(), MAX_SIZE, 0);
 }

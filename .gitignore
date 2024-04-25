@@ -29,3 +29,5 @@ x64/
 *.exe.recipe
 *.lib.recipe
 *.pch
+
+3rdparty/*

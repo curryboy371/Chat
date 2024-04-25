@@ -7,6 +7,9 @@
     <Filter Include="Main">
       <UniqueIdentifier>{d860d98c-24ed-4de8-84d7-eb3c4b02e0f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DB">
+      <UniqueIdentifier>{9b7e2173-d2a8-458b-bbaf-abb9b6d26a8b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Server.cpp">
@@ -18,6 +21,9 @@
     <ClCompile Include="ChattingServer.cpp">
       <Filter>Main</Filter>
     </ClCompile>
+    <ClCompile Include="DB.cpp">
+      <Filter>DB</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -25,6 +31,9 @@
     </ClInclude>
     <ClInclude Include="ChattingServer.h">
       <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="DB.h">
+      <Filter>DB</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
