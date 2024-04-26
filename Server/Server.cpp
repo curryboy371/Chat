@@ -3,9 +3,29 @@
 #include "ChattingServer.h"
 #include "DB.h"
 
+#include "CoreGlobal.h"
+
+CoreGlobal Core;
+
+void ThreadMain()
+{
+
+    while (true) 
+    {
+        cout << "thread : " << LThreadId << endl;
+        
+    }
+}
+
 
 int main()
 {
+    for (int32 i = 0; i < 5; ++i)
+    {
+
+    }
+
+
     WSADATA wsa;
 
     ChattingServer Server;

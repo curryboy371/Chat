@@ -1,6 +1,10 @@
 #pragma once
 
-#include <WinSock2.h>
+#include "CoreTLS.h"
+#include "CoreMacro.h"
+#include "CoreGlobal.h"
+#include "Type.h"
+
 #include <winsock2.h>
 #include <ws2tcpip.h> // �ʿ��� ���
 #include <Windows.h>
@@ -32,7 +36,7 @@
 
 using json = nlohmann::json;
 
-
+using std::thread;
 using std::cout;
 using std::cin;
 using std::endl;

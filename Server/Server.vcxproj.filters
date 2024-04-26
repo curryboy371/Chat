@@ -15,25 +15,25 @@
     <ClCompile Include="Server.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="ChattingServer.cpp">
       <Filter>Main</Filter>
     </ClCompile>
     <ClCompile Include="DB.cpp">
       <Filter>DB</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="ChattingServer.h">
       <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="DB.h">
       <Filter>DB</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Main</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

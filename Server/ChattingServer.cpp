@@ -208,6 +208,8 @@ void ChattingServer::RecvMsg(const boost::uuids::uuid& Inuid, const json& Injson
 void ChattingServer::DBInit()
 {
     myDB.DBConnect();
+
+    myDB.CreateTable();
 }
 
 void ChattingServer::CreateAccount(const boost::uuids::uuid& Inuid, const std::string& name, const std::string& passwd)
