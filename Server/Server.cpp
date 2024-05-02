@@ -75,125 +75,115 @@ int main()
 
     cout << "Accept" << '\n';
 
-    //select model
-    // 소켓 함수 호출이 성공할지 안할지를 미리 알 수 있음.
-    // how?
-
-    // 문제상황
-    // 수신 버퍼에 데이터가 없는데 read를 함.
-    // 송신 버퍼가 꽈 찼는데 write를 함
-    // 블로킹 소켓 : 조건이 만족되지 않아서 블로킹되는 상황 예방
-    // 논블로킹 소켓 : 조건이 만족되지 않아서 불필요하게 반복 체크하는 상황을 예방
-    
-    // socket set
-    // 1 읽기[2] 쓰기[ ] 예외[ ] 관찰 대상 등록
-    // OutOfBand는 send 마지막 인자 MSG_OOB로 보내는 특별한 데이터
-    // 받는 쪽에서도 recv OOB 세팅을 해야 읽을 수 있음.
-    // 2 select (readSet, writeSet, exceptSet) 관찰 시작
-    // 적어도 하나의 소켓이 준비되면 리턴 > 낙오자는 알아서 제거
-    // 남는 소켓 체크해서 진행...
+   
+    // WSAEventSelect = (WSAEventSelect 함수가 핵심)
+    // 소켓과 관련된 네트워크 이벤트를 이벤트 객체를 통해 감지함
 
 
-    // FD_ZERO :  비움
-    // FD_SET : 소켓을 넣음
-    // FD_CLR : 소켓을 제거
-    // FD_ISSET : 소켓이 Set에 들어있으면 0아닌 값을 리턴
+    // 이벤트 객체 관련 함수
+    // 생성 : WSACreateEvent ( 수동 리셋 Manual-Reset + Non-Signaled State)
+    // 삭제 : WSACloseEvent
+    // 상태 감지 : WSAWaitForMultipleEvents
+    // 네트워트 이벤트 알아내는 함수 : WSAEnumNetworkEvents
 
-    vector<Session> sessions;
-    sessions.reserve(100);
+    // 소켓 - 이벤트 객체를 1:1로 연도하여 사용
+    // WSAEventSelect(socket, event, networkEvents); - 소켓과 이벤트를 1:1 연동
+    // 관찰 가능한 네트워크 이벤트 옵션들.. 
+    // FD_ACCEPT : 접속한 클라가 있을때 accept
+    // FD_READ : 데이터 수신 가능 recv, recvfrom
+    // FD_WRITE : 데이터 송신 가능 send, snedto
+    // FD_CLOSE : 상대가 접속 종료
+    // FD_CONNECT : 통신을 위한 절차 완료 connect
+    // FD_OOB 
 
-    fd_set reads;
-    fd_set writes;
 
-    while (true)
+    // 주의 
+    // WSAEventSelect 함수를 호출하면, 해당 소켓은 자동으로 Non-Blocking Mode로 전환됨
+    // Accept() 함수가 리턴하는 소켓은 listen Socket과 동일한 속성을 가짐
+    // 따라서 closeSocket은 FD_Read, Fd_write 등을 다시 등록해야함
+    // 드물게 WSAWOULDBLOCK 오류가 뜰 수 있으므로 예외처리 필요함
+    // *** 이벤트 발생시 적절한 소켓 함수 호출해야함, 그렇지 못하면 다음번에 동일 네트워크 이벤트가 발생 안함 (두번다시 발생하지 않음 )
+
+
+    // 등록은 WSAEventSelect, 통지는 WSAWaitForMultipleEvents 함수에서 받음.
+
+    // WSAWaitForMultipleEvents 
+    // param 1 count, event
+    // param 2 wailt all 모두 기ㅏ릴지, 하나만 완료되어도 ok할지
+    // param3 timeout 
+    // param4 false
+    // return d완료된 첫번째 인덱스 
+
+    // WSAEnumNetworkEvents
+    // param1 socket
+    // param2 eventObj ( 소켓과 연동된 이벤트 객체) > 이벤트 객체를 non-signaled로 변경해줌
+    // param3 networkevent : 네트워크 이벤트 | 오류 정보 반환
+
+
+
+    vector<WSAEVENT> wsaEvents; // 소켓과 1:1로 대칭할 이벤트
+    vector<Session> sessions; // 이벤트와 1:1로 대칭할 소켓
+
+    // 이벤트 생성
+    WSAEVENT listenEvent = ::WSACreateEvent();
+
+    // 소켓-이벤트 1:1 맵핑 비슷하게 pushback() 
+    wsaEvents.push_back(listenEvent);
+    sessions.push_back(Session{ listenSocket });
+
+
+    // listenSocket 소켓 NonBlocking Mode로 전환
+    // 1대1 관계ㅇ니 listensocket - lisetevent객체를 넣어줌
+    // Accept, Close 이벤트를 캐치를 expect
+    if (::WSAEventSelect(listenSocket, listenEvent, FD_ACCEPT | FD_CLOSE) == SOCKET_ERROR)
     {
-        // 매 루프마다 초기화 하고 select 가 실행됨.
-        // select가 호출되고 나면 관찰이 필요한 소켓만 선택되어 나머지는 제거됨
-        // 소켓 셋 초기화
-        FD_ZERO(&reads);
-        FD_ZERO(&writes);
-
-
-        // listenSocket 등록
-        FD_SET(listenSocket, &reads);
-
-
-        // 소켓 등록
-        for (Session& s : sessions)
-        {
-            // 최초에는 read 등록
-            if (s.recvBytes <= s.sendBytes)
-            {
-                FD_SET(s.socket, &reads);
-            }
-            else
-            {
-                FD_SET(s.socket, &writes);
-            }
-        }
-
-        // Option 마지막 timeOut 인자 설정 가능함
-        int32 retVal = ::select(0, &reads, &writes, nullptr, nullptr);
-        if (retVal == SOCKET_ERROR)
-        {
-            break;
-        }
-
-        // Listener 소켓 체크
-        if (FD_ISSET(listenSocket, &reads))
-        {
-            SOCKADDR_IN clientAddr;
-            int32 addrLen = sizeof(clientAddr);
-            SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
-            if (clientSocket != INVALID_SOCKET)
-            {
-                sessions.push_back(Session{ clientSocket });
-                cout << "Client Connected " << endl;
-
-            }
-        }
-
-        // 나머지 소켓 체크
-        for (Session& s : sessions)
-        {
-            // Read
-            if (FD_ISSET(s.socket, &reads))
-            {
-                int32 recvLen = ::recv(s.socket, s.recvBuffer, BUFSIZE, 0);
-                if (recvLen <= 0)
-                {
-                    // TODO : sessions remove
-                    continue;
-                }
-
-                s.recvBytes = recvLen;
-            }
-
-            // Write
-            if (FD_ISSET(s.socket, &writes))
-            {
-                // 블로킹 모드 > 모든 데이터 다 보냄
-                // 논블로킹 모드 - 일부만 보낼 수 있음 ( 상대 수신 버퍼 상황에 따라..)
-                int32 sendLen = ::send(s.socket, &s.recvBuffer[s.sendBytes], s.recvBytes - s.sendBytes, 0);
-                if (sendLen == SOCKET_ERROR)
-                {
-                    //todo : session remove
-                    continue;
-                }
-
-                s.sendBytes += sendLen;
-                if (s.recvBytes == s.sendBytes)
-                {
-                    s.recvBytes = 0;
-                    s.sendBytes = 0;
-                }
-            }
-        }
+        // ERROR 
+        return 0;
     }
 
 
+    // client 소켓이 n개가 되는 경우 하나씩 체크하는게 아니라
+    // n개를 모두 등록하고 event 발생하는 것만 처리하도록 함.
 
 
+    while (true)
+    {
+        bool fWaitAll = false;
+        // 이벤트의 개수 n 개
+        // 이벤트의 주소 
+        // 하나라도 완료되면 빠져나오도록... ( 다 기다리지 않도록
+        // 타임아웃 없음
+        // return 인덱스 
+
+        // ??? 2번째 이벤트의 주소는 현재 listen이벤트의 주소 하나만을 넣어주고 있는데
+        // 이것은 배열의 첫번째 주소를 넘겨주면 나머지는 다 등록되는 것인가? 아니면 listenEvent만 등록하는 상황이라 그런것인가..
+        // fWailtAll 옵션이 있어서 소켓 하나만 처리하는게 아니긴 한데...
+        int32 index = ::WSAWaitForMultipleEvents(wsaEvents.size(), &wsaEvents[0], fWaitAll, WSA_INFINITE, FALSE);
+
+        if (index == WSA_WAIT_FAILED)
+        {
+            // ERROR
+            continue;
+        }
+
+        // 인덱스 조정
+        index -= WSA_WAIT_EVENT_0;
+
+        // WSAEnumNetworkEvents에서 eventReset기능 포함하여 실행 안해도됨
+        //::WSAResetEvent(wsaEvents[index]);
+
+        // 어떤 이벤트에서 걸렸는지 체크
+        WSANETWORKEVENTS networkEvents;
+
+        // param1 소켓을 꺼냄
+        // param2 해당하는 이벤트 꺼냄
+        // param3 관찰하려는 이벤트 정보 or 에러 
+        if (::WSAEnumNetworkEvents(sessions[index].socket, wsaEvents[index], &networkEvents) == SOCKET_ERROR)
+        {
+            // Error
+            continue;
+        }
+    }
 
     WSACleanup();
 
