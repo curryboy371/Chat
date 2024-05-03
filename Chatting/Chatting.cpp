@@ -88,60 +88,38 @@ int main()
     cout << "Connected to Server" << endl;
 
     char sendBuffer[100] = "Hi Server";
+    WSAEVENT wasEvent = ::WSACreateEvent();
+    WSAOVERLAPPED overlapped = {};
+    overlapped.hEvent = wasEvent;
 
     //send
     while (true)
     {
-        if (::send(clientSocket, sendBuffer, sizeof(sendBuffer), 0) == SOCKET_ERROR)
-        {
-            // 블록
-            if (::WSAGetLastError() == WSAEWOULDBLOCK)
-            {
-                /*
-                만약 connect 함수가 블록되어 있는 상태에서 오류가 발생한다면,
-                WSAEWOULDBLOCK 에러 코드가 반환될 수 있습니다.
-                이는 비동기 소켓(non-blocking socket)에서 소켓 연결이 아직 완료되지 않았음을 나타내는 에러 코드입니다.
-                따라서 if 문에서 WSAEWOULDBLOCK 에러를 검사하고 있는데,
-                이 경우에는 블록되지 않고 다음 루프로 넘어가게 됩니다.
-                이는 연결이 아직 완료되지 않았지만, 계속해서 연결을 시도하겠다는 것을 나타냅니다.
+        WSABUF wasBuf;
+        wasBuf.buf = sendBuffer;
+        wasBuf.len = 100;
 
-                */
-                continue;
+
+        DWORD sendLen = 0;
+        DWORD flags = 0;
+
+        if (::WSASend(clientSocket, &wasBuf, 1, &sendLen, flags, &overlapped, nullptr) == SOCKET_ERROR)
+        {
+            if (::WSAGetLastError() == WSA_IO_PENDING)
+            {
+                // Pending
+                ::WSAWaitForMultipleEvents(1, &wasEvent, TRUE, WSA_INFINITE, FALSE);
+                ::WSAGetOverlappedResult(clientSocket, &overlapped, &sendLen, FALSE, &flags);
             }
-            // Error
-            break;
-        }
-
-        cout << "Send Data ! Len = " << sizeof(sendBuffer) << endl;
-
-
-        // Recv
-        while (true)
-        {
-            char recvBuffer[1000];
-            int32 recvLen = ::recv(clientSocket, recvBuffer, sizeof(recvBuffer), 0);
-            if (recvLen == SOCKET_ERROR)
+            else
             {
-                if (::WSAGetLastError() == WSAEWOULDBLOCK)
-                {
-                    continue;
-                }
-
-                // Error
+                // TODO Error
                 break;
             }
-            else if (recvLen == 0)
-            {
-                // 연결 끊김
-                break;
-            }
-
-            cout << "Recv Data Len = " << recvLen << endl;
-            break;
-
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // 1초 동안 대기
+        cout << "Data Send Len = " << sendLen << endl;
+        std::this_thread::sleep_for(std::chrono::seconds(30)); // 1초 동안 대기
     }
 
     //ChatClient client;
