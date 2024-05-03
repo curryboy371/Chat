@@ -26,6 +26,8 @@ void RunChatSession(ChatClient& client)
 
 int main()
 {
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // 1초 동안 대기
+
     WSADATA wsa;
     if (::WSAStartup(MAKEWORD(2, 2), &wsa) != 0) 
     {

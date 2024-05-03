@@ -105,6 +105,9 @@ int main()
     // *** 이벤트 발생시 적절한 소켓 함수 호출해야함, 그렇지 못하면 다음번에 동일 네트워크 이벤트가 발생 안함 (두번다시 발생하지 않음 )
 
 
+    // 이벤트 객체를 한번 만들어두고 select 처럼 모두 리셋하지는 않음.
+
+
     // 등록은 WSAEventSelect, 통지는 WSAWaitForMultipleEvents 함수에서 받음.
 
     // WSAWaitForMultipleEvents 
@@ -133,7 +136,7 @@ int main()
 
 
     // listenSocket 소켓 NonBlocking Mode로 전환
-    // 1대1 관계ㅇ니 listensocket - lisetevent객체를 넣어줌
+    // 1대1 관계이므로 listensocket - lisetevent객체를 넣어줌
     // Accept, Close 이벤트를 캐치를 expect
     if (::WSAEventSelect(listenSocket, listenEvent, FD_ACCEPT | FD_CLOSE) == SOCKET_ERROR)
     {
@@ -158,7 +161,9 @@ int main()
         // ??? 2번째 이벤트의 주소는 현재 listen이벤트의 주소 하나만을 넣어주고 있는데
         // 이것은 배열의 첫번째 주소를 넘겨주면 나머지는 다 등록되는 것인가? 아니면 listenEvent만 등록하는 상황이라 그런것인가..
         // fWailtAll 옵션이 있어서 소켓 하나만 처리하는게 아니긴 한데...
+        // = 등록된 모든 이벤트가 완료될때까지 기다리고 이후 한번에 하나씩 처리 한다는 방식으로 보여짐!
         int32 index = ::WSAWaitForMultipleEvents(wsaEvents.size(), &wsaEvents[0], fWaitAll, WSA_INFINITE, FALSE);
+        // 가장먼저 signaled 되는 이벤트의 인덱스가 나옴. 이 이벤트는 소켓과 인덱스가 동일하게 연결해뒀으므로 소켓에 접근할 수 있음.
 
         if (index == WSA_WAIT_FAILED)
         {
@@ -175,6 +180,9 @@ int main()
         // 어떤 이벤트에서 걸렸는지 체크
         WSANETWORKEVENTS networkEvents;
 
+
+
+        // 이벤트를 다시 non signaled 상태로 전환함 ( signal 정보를 아래에서 체크하여 수행할 것이므로 ) 
         // param1 소켓을 꺼냄
         // param2 해당하는 이벤트 꺼냄
         // param3 관찰하려는 이벤트 정보 or 에러 
@@ -183,6 +191,105 @@ int main()
             // Error
             continue;
         }
+
+        // Listener 소켓 체크
+        if (networkEvents.lNetworkEvents & FD_ACCEPT)
+        {
+            // Error Check
+            if (networkEvents.iErrorCode[FD_ACCEPT_BIT] != 0)
+            {
+                continue;
+            }
+
+            SOCKADDR_IN clientAddr;
+            int32 addrLen = sizeof(clientAddr);
+
+            // 클라이언트 소켓을 받고
+            SOCKET clientSocket = ::accept(listenSocket, (SOCKADDR*)&clientAddr, &addrLen);
+            if (clientSocket != INVALID_SOCKET)
+            {
+                cout << "Client Connected" << endl;
+
+                // 연결되면 받은 클라이언트 소켓도 1:1 매칭 시키게 이에 대응하는 이벤트 생성
+                WSAEVENT clientEvent = WSACreateEvent();
+
+                // 클라이언트 소켓 맵핑
+                // 소켓-이벤트 1:1 맵핑 비슷하게 pushback() 
+                wsaEvents.push_back(clientEvent);
+                sessions.push_back(Session{ clientSocket });
+                if (::WSAEventSelect(clientSocket, clientEvent, FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR) // 리스너가 아니므로 옵션 교체
+                {
+                    // ERROR 
+                    return 0;
+                }
+
+
+            }
+        }
+
+        // Client Session 소켓 체크
+        if (networkEvents.lNetworkEvents & FD_READ || networkEvents.lNetworkEvents & FD_WRITE)
+        {
+            // Error Check
+            if (networkEvents.lNetworkEvents & FD_READ && networkEvents.iErrorCode[FD_READ_BIT] != 0)
+            {
+                continue;
+            }
+
+            // Error Check
+            if (networkEvents.lNetworkEvents & FD_WRITE && networkEvents.iErrorCode[FD_WRITE_BIT] != 0)
+            {
+                continue;
+            }
+
+             
+            // event-socket의 인덱스가 연결되었으므로 동일 인덱스로 session에 접근
+            Session& s = sessions[index];
+
+            // Read
+            if (s.recvBytes == 0)
+            {
+                int32 recvLen = ::recv(s.socket, s.recvBuffer, BUFSIZE, 0);
+
+                if (recvLen == SOCKET_ERROR && ::WSAGetLastError() != WSAEWOULDBLOCK) // woudboock는 예외이므로 비포함
+                {
+                    // ERROR
+                    continue;
+                }
+
+                s.recvBytes = recvLen;
+                cout << "Recv Data = " << recvLen << endl;
+            }
+
+
+            // Write
+            if (s.recvBytes > s.sendBytes)
+            {
+                int32 sendLen = ::send(s.socket, &s.recvBuffer[s.sendBytes], s.recvBytes - s.sendBytes, 0);
+                if (sendLen == SOCKET_ERROR && ::WSAGetLastError() != WSAEWOULDBLOCK)
+                {
+                    // Error
+                    continue;
+                }
+
+                s.sendBytes += sendLen;
+                if (s.recvBytes == s.sendBytes)
+                {
+                    s.recvBytes = 0;
+                    s.sendBytes = 0;
+                }
+
+                cout << "Send Data " << sendLen << endl;
+            }
+
+
+            // FD_CLOSE 처리
+            if (networkEvents.lNetworkEvents & FD_CLOSE)
+            {
+                // Remove 
+            }
+        }
+
     }
 
     WSACleanup();
