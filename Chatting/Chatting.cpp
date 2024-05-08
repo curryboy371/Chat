@@ -119,7 +119,7 @@ int main()
         }
 
         cout << "Data Send Len = " << sendLen << endl;
-        std::this_thread::sleep_for(std::chrono::seconds(30)); // 1초 동안 대기
+        std::this_thread::sleep_for(std::chrono::seconds(5)); // 1초 동안 대기
     }
 
     //ChatClient client;

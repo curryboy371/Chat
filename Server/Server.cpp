@@ -27,6 +27,12 @@ struct Session
     WSAOVERLAPPED overlapped = {};
 };
 
+void CALLBACK RecvCallback(DWORD error, DWORD recvLen, LPWSAOVERLAPPED overlapped, DWORD flags)
+{
+    cout << "Data Recv Len Callback = " << recvLen << endl;
+    
+    // TODO
+}
 
 
 
@@ -90,23 +96,22 @@ int main()
     // 5 WSAOVERLAPPED 구조체 주소
     // 6 입출력 완료되면 OS가 호출할 CallbackFunc
 
-    // Overlapped Model - Event
+    // Overlapped Model - Callback
     // 비도기 입출력 지원하는 소켓 생성, 통지 받는 이벤트 객체 생성
-    // 비동기 입출력 함수 호출 ( 이벤트 객체를 넘김)
+    // 비동기 입출력 함수 호출 ( 완료 루틴 시작 주소 넘겨줌)
     // 비동기 작업이 바로 완료되지 않으면 WSA_IO_PENDING 오류
-    // 운영체제느 ㄴ이벤트 객체를 signaled 상태로 만들어 완료 상태를 알려줌
-    // WSAWaitForMultipleEvents  함수 호출하여 이벤트 객체의 signal 판별
-    // WSAGetOverlappedResult 호출하여 비동기 입출력 결과 확인 및 데이터 처리
+    // // 비동기입추력 함수 호출한 쓰레드를 Alertable Wait 상태로 만듬
+    // ex waitforsingleobjectgex, wailtformultipleobjectex, sleepex, wsawaitformultipleevnets
+    // 비동기 IO 완료되면, 운영체제는 완료 루틴 호출
+    // 완료 루틴 호출 모두 끝나면, 스레드는 alertable wait 상태에서 빠져나옴
 
 
-    // WSAGetOverlappedResult
-    // 1 비동기 소켓
-    // 2 넘겨준 overlapped 구조체
-    // 3 전송된 바이트 수
-    // 4 비동기 입출력 작업이 ㄲ트날때까지 대기할지
-    // 5 false
 
-
+    // void CompletionRoutine()
+    // param1 오류 발생시 0아닌 값
+    // param2 전송 바이트 수
+    // param3 비동기 입출력 함수 호출시 넘겨준 WSAVOVERLAPPED 구조체 주소
+    // param4 0
     // Overlapped Model Event Send & Recv에만 적용해봄
 
     while (true)
@@ -135,7 +140,7 @@ int main()
 
         Session session = Session{ clientSocket };
         WSAEVENT wasEvent = ::WSACreateEvent();
-        session.overlapped.hEvent = wasEvent;
+        //session.overlapped.hEvent = wasEvent;
 
         cout << "Client Connected !" << endl;
         
@@ -150,14 +155,16 @@ int main()
             DWORD recvLen = 0;
             DWORD flags = 0;
 
-            if (::WSARecv(clientSocket, &wasBuf, 1, &recvLen, &flags, &session.overlapped, nullptr) == SOCKET_ERROR)
+            if (::WSARecv(clientSocket, &wasBuf, 1, &recvLen, &flags, &session.overlapped, RecvCallback) == SOCKET_ERROR)
             {
                 if (::WSAGetLastError() == WSA_IO_PENDING)
                 {
                     // Pending
-                    ::WSAWaitForMultipleEvents(1, &wasEvent, TRUE, WSA_INFINITE, FALSE); // 음.. 이렇게 하면 블로킹 아냐?? 다른 로직 실행 가능한가
+                    //::WSAWaitForMultipleEvents(1, &wasEvent, TRUE, WSA_INFINITE, FALSE); // 음.. 이렇게 하면 블로킹 아냐?? 다른 로직 실행 가능한가
                     ++test;
-                    ::WSAGetOverlappedResult(session.socket, &session.overlapped, &recvLen, FALSE, &flags);
+                    ::SleepEx(INFINITE, TRUE);
+                    // Alertable Wait 
+                    //::WSAGetOverlappedResult(session.socket, &session.overlapped, &recvLen, FALSE, &flags);
                 }
                 else
                 {
@@ -166,7 +173,7 @@ int main()
                 }
             }
 
-            cout << "Data Recv Len = " << recvLen << endl;
+            //cout << "Data Recv Len = " << recvLen << endl;
 
         }
     }
