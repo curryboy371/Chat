@@ -6,8 +6,10 @@
 #include "Type.h"
 
 #include <winsock2.h>
-#include <ws2tcpip.h> // �ʿ��� ���
-#include <Windows.h>
+#include <ws2tcpip.h> 
+#include <windows.h>
+#include <memory.h>
+#include <mswsock.h>
 
 #include <conio.h> 
 #include <iostream>
