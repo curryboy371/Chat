@@ -5,7 +5,7 @@
 
 
 class AcceptEvent;
-
+class ServerService;
 class Listener : public IocpObject
 {
 
@@ -16,7 +16,7 @@ public:
 public:
 
 	// 외부 사용
-	bool StartAccept(NetAddress netAddress);
+	bool StartAccept(ServerServiceRef service);
 	void CloseSocket();
 
 public:
@@ -38,5 +38,6 @@ protected:
 	SOCKET _socket = INVALID_SOCKET;
 	std::vector<AcceptEvent*> _acceptEvens;
 
+	ServerServiceRef _service;
 };
 

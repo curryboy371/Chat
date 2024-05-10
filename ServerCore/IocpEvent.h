@@ -41,7 +41,7 @@ public:
 
 public:
 	EventType eventype;
-	locpObjectRef owner;
+	IocpObjectRef owner;
 };
 
 

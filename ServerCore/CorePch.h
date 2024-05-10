@@ -20,6 +20,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <set>
 
 #include <thread>
 #include <mutex>

@@ -3,21 +3,28 @@
 #include "ChattingServer.h"
 #include "DB.h"
 
-
-
 #include "ThreadManager.h"
-#include "SocketUtils.h"
-#include "Listener.h"
+
+#include "Service.h"
+#include "Session.h"
 CoreGlobal Core;
 
 
+class GameSession : public Session
+{
+
+};
+
 int main()
 {
-    Listener* temp = new Listener;
+    NetAddress address = { L"127.0.0.1", 7777 };
+    SessionFactory factory = []() {
+        return std::make_shared<Session>(); // 세션을 생성하여 반환
+    };
 
-    ListenerRef listener = std::make_shared<Listener>(*temp);
 
-    listener->StartAccept(NetAddress(L"127.0.0.1", 7777));
+    ServerServiceRef service = std::make_shared<ServerService>(address, std::make_shared<IocpCore>(), factory, 1);
+    ASSERT_CRASH(service->Start());
 
     for (int32 i = 0; i < 5; ++i)
     {
@@ -26,7 +33,7 @@ int main()
                 while (true)
                 {
                     // 이렇게 하면 공용자원 안 건드나?
-                    GlobalCore.Dispatch();
+                    service->GetIocpCore()->Dispatch();
                 }
             });
     }

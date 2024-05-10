@@ -17,7 +17,7 @@ public:
 
 	HANDLE GetHandel() { return _iocpHandle; }
 
-	bool Register(class IocpObject* iocpObject);
+	bool Register(IocpObjectRef IocpObject);
 	bool Dispatch(uint32 timeoutMs = INFINITE);
 
 
@@ -28,7 +28,3 @@ private:
 
 };
 
-
-
-//Temp
-extern IocpCore GlobalCore;
