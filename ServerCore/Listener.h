@@ -29,8 +29,8 @@ public:
 	
 private:
 	//수신 관련...
-	void RegisterAccept(AcceptEvent* acceptEvent);
-	void ProcessAccept(AcceptEvent* acceptEvent);
+	void RegisterAccept(AcceptEvent* acceptEvent); // 비동기 함수 걸어서
+	void ProcessAccept(AcceptEvent* acceptEvent); // register 성공
 
 
 protected:

@@ -73,7 +73,7 @@ bool Listener::StartAccept(ServerServiceRef service)
         _acceptEvens.push_back(acceptEvent);
         RegisterAccept(acceptEvent);
     }
-    return false;
+    return true;
 }
 
 void Listener::CloseSocket()
@@ -141,6 +141,9 @@ void Listener::ProcessAccept(AcceptEvent* acceptEvent)
     session->SetNetAddress(NetAddress(sockAddress));
 
     cout << "Client Connected !~ " << endl;
+    // 세션 접속 성공
+
+    session->ProcessConnect();
 
     // todo
 

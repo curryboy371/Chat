@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Service.h"
+#include "Session.h"
 
 Service::Service(ServiceType type, NetAddress address, IocpCoreRef core, SessionFactory factory, int32 maxSessionCount)
     :_type(type), _netAddress(address), _iocpCore(core), _sessionFactory(factory), _maxSessionCount(maxSessionCount)
@@ -23,14 +24,13 @@ void Service::CloseService()
 SessionRef Service::CreateSession()
 {
     SessionRef session = _sessionFactory();
-    Session* sessionptr = session.get();
+    session->SetService(shared_from_this());
 
-    IocpObject* iocpptr = (IocpObject*)session.get();
-    
-    if (_iocpCore->Register(std::shared_ptr<IocpObject>(iocpptr)) == false)
+    if (_iocpCore->Register(session) == false)
     {
         return nullptr;
     }
+
 
     return session;
 }
