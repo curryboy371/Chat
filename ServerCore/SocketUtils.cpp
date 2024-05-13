@@ -74,6 +74,11 @@ bool SocketUtils::SetUpdateAcceptSocket(SOCKET socket, SOCKET listenSocket)
 
 bool SocketUtils::Bind(SOCKET socket, NetAddress netAddr)
 {
+	USHORT port = netAddr.GetSockAddr().sin_port;
+	IN_ADDR addr = netAddr.GetSockAddr().sin_addr;
+
+	WCHAR temp_buffer[INET_ADDRSTRLEN]; // WCHAR 배열로 선언
+	PCWSTR ipString = InetNtop(AF_INET, &addr, temp_buffer, INET_ADDRSTRLEN);
 	return SOCKET_ERROR != ::bind(socket, reinterpret_cast<const SOCKADDR*>(&netAddr.GetSockAddr()), sizeof(SOCKADDR_IN));
 }
 
@@ -84,7 +89,9 @@ bool SocketUtils::BindAnyAddress(SOCKET socket, uint16 port)
 	myAddress.sin_addr.s_addr = ::htonl(INADDR_ANY);
 	myAddress.sin_port = ::htons(port);
 
-	return SOCKET_ERROR != ::bind(socket, reinterpret_cast<const SOCKADDR*>(&myAddress), sizeof(myAddress));
+	int32 Result = ::bind(socket, reinterpret_cast<const SOCKADDR*>(&myAddress), sizeof(myAddress));
+	bool bResult = SOCKET_ERROR != Result;
+	return bResult;
 }
 
 bool SocketUtils::Listen(SOCKET socket, int32 backlog)

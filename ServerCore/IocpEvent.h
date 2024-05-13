@@ -22,6 +22,7 @@ enum class EventType : uint8
 {
 
 	Connect,
+	Disconnect,
 	Accept,
 	//PreRecv,
 	Recv,
@@ -65,6 +66,14 @@ public:
 private:
 };
 
+class DisconnectEvent : public IocpEvent
+{
+public:
+	DisconnectEvent() : IocpEvent(EventType::Disconnect) {}
+
+private:
+};
+
 class RecvEvent : public IocpEvent
 {
 public:
@@ -78,5 +87,7 @@ class SendEvent : public IocpEvent
 public:
 	SendEvent() : IocpEvent(EventType::Send) {}
 
+	// TEmp
+	std::vector<BYTE> buffer;
 private:
 };

@@ -3,15 +3,42 @@
 #include "SocketUtils.h"
 
 #include "Service.h"
+#include "IocpEvent.h"
 
 Session::Session()
 {
     _socket = SocketUtils::CreateSocket();
+    if (_socket == UINT64_MAX)
+    {
+        int32 errCode = ::WSAGetLastError();
+        cout << errCode << endl;
+    }
 }
 
 Session::~Session()
 {
     SocketUtils::Close(_socket);
+}
+
+void Session::Send(BYTE* buffer, int32 len)
+{
+    // 버퍼 관리
+    // SendEvnet를 어떤식으로 관리할지. 단일 or 복수
+    // wsasend는 중첩하는지
+
+    //temp
+    SendEvent* sendEvent = new SendEvent;
+    sendEvent->owner = shared_from_this(); // add ref
+    sendEvent->buffer.resize(len);
+    ::_memccpy(sendEvent->buffer.data(), buffer, 0, len);
+
+    //WRITE_LOCK
+    RegisterSend(sendEvent);
+}
+
+bool Session::Connect()
+{
+    return RegisterConnect();
 }
 
 void Session::Disconnect(const WCHAR* cause)
@@ -29,6 +56,8 @@ void Session::Disconnect(const WCHAR* cause)
     SocketUtils::Close(_socket);
     GetService()->ReleaseSession(GetSessionRef());
 
+
+    RegisterDisconnect();
 }
 
 HANDLE Session::GetHandle()
@@ -45,13 +74,16 @@ void Session::Dispatch(IocpEvent* iocpEvent, int32 numOfBytes)
     case EventType::Connect:
         ProcessConnect();
         break;
+    case EventType::Disconnect:
+        ProcessDisconnect();
+        break;
 
     case EventType::Recv:
         ProcessRecv(numOfBytes);
         break;
 
     case EventType::Send:
-        ProcessSend(numOfBytes);
+        ProcessSend(static_cast<SendEvent*>(iocpEvent), numOfBytes);
         break;
 
 
@@ -60,8 +92,75 @@ void Session::Dispatch(IocpEvent* iocpEvent, int32 numOfBytes)
     }
 }
 
-void Session::RegisterConnect()
+bool Session::RegisterConnect()
 {
+    if (IsConnected() == true)
+    {
+        return false;
+    }
+
+    // 커넥트는 클라이언트일때만 요청해야함
+    if (GetService()->GetServiceType() != ServiceType::Client)
+    {
+        return false;
+    }
+
+    if (SocketUtils::SetReuseAddress(_socket, true) == false)
+    {
+        int32 errCode = ::WSAGetLastError();
+        cout << errCode << endl;
+        return false;
+    }
+
+    if (SocketUtils::BindAnyAddress(_socket, 0/*남은 포트에서 아무거나 연동*/) == false)
+    {
+        int32 errCode = ::WSAGetLastError();
+        cout << errCode << endl;
+        return false;
+    }
+
+    _connectEvent.Init();
+    _connectEvent.owner = shared_from_this(); // Add Ref
+
+    DWORD numOfBytes;
+    SOCKADDR_IN sockAddr = GetService()->GetNetAddress().GetSockAddr();
+    sockAddr.sin_port;
+    sockAddr.sin_addr;
+
+    if(false == SocketUtils::ConnectEx(_socket, reinterpret_cast<SOCKADDR*>(&sockAddr), sizeof(sockAddr), nullptr, 0, &numOfBytes, &_connectEvent))
+    {
+        int32 errCode = ::WSAGetLastError();
+        if (errCode != WSA_IO_PENDING)
+        {
+            _connectEvent.owner = nullptr; // Release Ref
+            return false;
+        }
+    }
+
+
+    return true;
+
+}
+
+bool Session::RegisterDisconnect()
+{
+    _disconnectEvent.Init();
+    _disconnectEvent.owner = shared_from_this(); // Add Ref
+
+    DWORD nulOfBytes = 0;
+    SOCKADDR_IN sockAddr = GetService()->GetNetAddress().GetSockAddr();
+
+    if (false == SocketUtils::DisconnectEx(_socket, &_disconnectEvent, TF_REUSE_SOCKET, 0))
+    {
+        int32 errCode = ::WSAGetLastError();
+        if (errCode != WSA_IO_PENDING)
+        {
+            _connectEvent.owner = nullptr; // Release Ref
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void Session::RegisterRecv()
@@ -92,12 +191,44 @@ void Session::RegisterRecv()
     }
 }
 
-void Session::RegisterSend()
+void Session::RegisterSend(SendEvent* sendEvent)
 {
+    if (IsConnected() == false)
+    {
+        return;
+    }
+
+    WSABUF wsaBuf;
+
+    wsaBuf.buf = (char*)sendEvent->buffer.data();
+    wsaBuf.len = (ULONG)sendEvent->buffer.size();
+
+
+    DWORD numOfByte = 0;
+
+
+    // WSASend는 Multi Thread에서 Safe한가?
+    // 그렇지 않기 때문에 호출이전에 lock을 걸어줘야함.
+    // 
+    if (SOCKET_ERROR == ::WSASend(_socket, &wsaBuf, 1, OUT & numOfByte, 0, sendEvent, nullptr))
+    {
+        int32 errCode = ::WSAGetLastError();
+        if (errCode != WSA_IO_PENDING)
+        {
+            HandleError(errCode);
+            sendEvent->owner = nullptr; // Release Ref
+            delete sendEvent;
+        }
+    }
+
+
+
 }
 
 void Session::ProcessConnect()
 {
+    _connectEvent.owner = nullptr; // release ref 
+
     // connect 값 변경
     _connected.store(true); 
 
@@ -113,6 +244,12 @@ void Session::ProcessConnect()
     RegisterRecv();
 }
 
+void Session::ProcessDisconnect()
+{
+    _disconnectEvent.owner = nullptr;
+
+}
+
 void Session::ProcessRecv(int32 numOfBytes)
 {
     _recvEvent.owner = nullptr; // release ref
@@ -123,9 +260,8 @@ void Session::ProcessRecv(int32 numOfBytes)
         return;
     }
 
-    //TODO
-    std::cout << "Recv Data Len " << numOfBytes << '\n';
-
+    //컨텐츠 오버라이딩
+    OnRecv(_recvBuffer, numOfBytes);
 
     // 수신등록
     // 이렇게 꼐속 recv 해줘야하는건가??
@@ -133,8 +269,18 @@ void Session::ProcessRecv(int32 numOfBytes)
 
 }
 
-void Session::ProcessSend(int32 numOfBytes)
+void Session::ProcessSend(SendEvent* sendEvent, int32 numOfBytes)
 {
+    sendEvent->owner = nullptr; // relese ref
+    delete sendEvent;
+
+    if (numOfBytes == 0)
+    {
+        Disconnect(L"Send Data is 0");
+        return;
+    }
+
+    OnSend(numOfBytes);
 }
 
 void Session::HandleError(int32 errCode)

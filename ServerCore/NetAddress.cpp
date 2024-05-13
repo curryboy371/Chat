@@ -28,5 +28,7 @@ std::wstring NetAddress::GetIpAddress()
 
 IN_ADDR NetAddress::Ip2Address(const WCHAR* ip)
 {
-    return IN_ADDR();
+    IN_ADDR address;
+    ::InetPtonW(AF_INET, ip, &address);
+    return address;
 }

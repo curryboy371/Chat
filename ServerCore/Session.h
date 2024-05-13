@@ -18,7 +18,13 @@ public:
 	virtual ~Session();
 
 public:
+	// 외부에서 사용
+	void Send(BYTE* buffer, int32 len);
+	bool Connect();
 	void Disconnect(const WCHAR* cause); // 세션 연결 끊기
+
+
+
 	std::shared_ptr<Service> GetService() { return _service.lock(); } // lock()함수는 weak를 shared로 변환함
 	void SetService(std::shared_ptr<Service> service) { _service = service; }
 
@@ -41,13 +47,15 @@ public:
 
 private:
 	/* 전송 관련*/
-	void RegisterConnect();
+	bool RegisterConnect();
+	bool RegisterDisconnect();
 	void RegisterRecv();
-	void RegisterSend();
+	void RegisterSend(SendEvent* sendEvent);
 
 	void ProcessConnect();
+	void ProcessDisconnect();
 	void ProcessRecv(int32 numOfBytes);
-	void ProcessSend(int32 numOfBytes);
+	void ProcessSend(SendEvent* sendEvent, int32 numOfBytes);
 
 	void HandleError(int32 errCode);
 
@@ -61,7 +69,7 @@ protected:
 
 public:
 	// temp
-	char _recvBuffer[1000];
+	BYTE _recvBuffer[1000];
 
 private:
 	std::weak_ptr<Service> _service;
@@ -81,6 +89,9 @@ private:
 	
 private:
 	// IocpEvent 재사용을 위함
+	ConnectEvent _connectEvent;
+	DisconnectEvent _disconnectEvent;
+
 	RecvEvent _recvEvent;
 
 };

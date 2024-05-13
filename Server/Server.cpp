@@ -12,6 +12,25 @@ CoreGlobal Core;
 
 class GameSession : public Session
 {
+public:
+    ~GameSession()
+    {
+        cout << "GameSession::~GameSession " << endl;
+    }
+
+
+    virtual int32 OnRecv(BYTE* buffer, int32 len)override
+    {
+        cout << "OnRecv Len = " << len << endl;
+        Send(buffer, len);
+        return len;
+    }
+
+    virtual void OnSend(int32 len)override
+    {
+        cout << "OnSend Len = " << len << endl;
+    }
+
 
 };
 
@@ -19,14 +38,14 @@ int main()
 {
     NetAddress address = { L"127.0.0.1", 7777 };
     SessionFactory factory = []() {
-        return std::make_shared<Session>(); // 세션을 생성하여 반환
+        return std::make_shared<GameSession>(); // 세션을 생성하여 반환
     };
 
 
     ServerServiceRef service = std::make_shared<ServerService>(address, std::make_shared<IocpCore>(), factory, 1);
     ASSERT_CRASH(service->Start());
 
-    for (int32 i = 0; i < 5; ++i)
+    for (int32 i = 0; i < 1; ++i)
     {
         GThreadManager->Launch([=]()
             {
