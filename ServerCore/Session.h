@@ -5,6 +5,8 @@
 #include "IocpEvent.h"
 #include "NetAddress.h"
 
+#include "RecvBuffer.h"
+
 class Service;
 
 class Session : public IocpObject
@@ -12,6 +14,16 @@ class Session : public IocpObject
 	friend class Listener;
 	friend class IocpCore;
 	friend class Service;
+
+	enum class E_Session: int32
+	{
+		BUFFER_SIZE1 = 0x10000, // 64kb
+	};
+
+	enum 
+	{
+		BUFFER_SIZE = 0x10000, // 64kb
+	};
 
 public:
 	Session();
@@ -69,7 +81,9 @@ protected:
 
 public:
 	// temp
-	BYTE _recvBuffer[1000];
+	//BYTE _recvBuffer[1000];
+	RecvBuffer _recvBuffer;
+
 
 private:
 	std::weak_ptr<Service> _service;

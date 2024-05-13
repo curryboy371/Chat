@@ -6,6 +6,7 @@
 #include "IocpEvent.h"
 
 Session::Session()
+    :_recvBuffer(BUFFER_SIZE)
 {
     _socket = SocketUtils::CreateSocket();
     if (_socket == UINT64_MAX)
@@ -30,7 +31,7 @@ void Session::Send(BYTE* buffer, int32 len)
     SendEvent* sendEvent = new SendEvent;
     sendEvent->owner = shared_from_this(); // add ref
     sendEvent->buffer.resize(len);
-    ::_memccpy(sendEvent->buffer.data(), buffer, 0, len);
+    std::memcpy(sendEvent->buffer.data(), buffer, len);
 
     //WRITE_LOCK
     RegisterSend(sendEvent);
@@ -174,8 +175,8 @@ void Session::RegisterRecv()
     _recvEvent.owner = shared_from_this(); // AddRef
 
     WSABUF wsaBuf;
-    wsaBuf.buf = reinterpret_cast<char*>(_recvBuffer);
-    wsaBuf.len = len32(_recvBuffer);
+    wsaBuf.buf = reinterpret_cast<char*>(_recvBuffer.WritePos());
+    wsaBuf.len = _recvBuffer.FreeSize();
 
     DWORD numOfBytes = 0;
     DWORD flags = 0;
@@ -256,12 +257,28 @@ void Session::ProcessRecv(int32 numOfBytes)
 
     if (numOfBytes == 0)
     {
-        Disconnect(L"Recv byte is 0");
+        Disconnect(L"Error Recv byte is 0");
         return;
     }
 
+    if (_recvBuffer.OnWrite(numOfBytes) == false)
+    {
+        Disconnect(L"Error OnWrite Overflow");
+        return; 
+    }
+
+    int32 dataSize = _recvBuffer.DataSize();
+
     //컨텐츠 오버라이딩
-    OnRecv(_recvBuffer, numOfBytes);
+    int32 processLen = OnRecv(_recvBuffer.ReadPos(), dataSize);
+    
+    if (processLen < 0 || dataSize < processLen || _recvBuffer.OnRead(processLen) == false)
+    {
+        Disconnect(L"Error OnRead Overflow");
+        return;
+    }
+
+    _recvBuffer.Clean();
 
     // 수신등록
     // 이렇게 꼐속 recv 해줘야하는건가??
