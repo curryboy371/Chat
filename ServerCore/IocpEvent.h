@@ -87,7 +87,6 @@ class SendEvent : public IocpEvent
 public:
 	SendEvent() : IocpEvent(EventType::Send) {}
 
-	// TEmp
-	std::vector<BYTE> buffer;
+	std::vector<SendBufferRef> sendBuffers;
 private:
 };

@@ -7,6 +7,7 @@
 
 #include "RecvBuffer.h"
 
+
 class Service;
 
 class Session : public IocpObject
@@ -32,6 +33,7 @@ public:
 public:
 	// 외부에서 사용
 	void Send(BYTE* buffer, int32 len);
+	void Send(SendBufferRef sendBuffer);
 	bool Connect();
 	void Disconnect(const WCHAR* cause); // 세션 연결 끊기
 
@@ -62,28 +64,31 @@ private:
 	bool RegisterConnect();
 	bool RegisterDisconnect();
 	void RegisterRecv();
-	void RegisterSend(SendEvent* sendEvent);
+	void RegisterSend();
 
 	void ProcessConnect();
 	void ProcessDisconnect();
 	void ProcessRecv(int32 numOfBytes);
-	void ProcessSend(SendEvent* sendEvent, int32 numOfBytes);
+	void ProcessSend(int32 numOfBytes);
 
-	void HandleError(int32 errCode);
+	void HandleError(const char* FuncName, int32 errCode);
 
 protected:
 	// 컨텐츠에서 오버라이딩 해서 사용할 함수
 	virtual void OnConnected() {}
-	virtual int32 OnRecv(BYTE* buffer, int32 len) { return 0; }
-	virtual void  OnSend(int32 Len) {}
 	virtual void OnDisconnected() {}
+	virtual void  OnSend(int32 Len) {}
+	virtual int32 OnRecv(BYTE* buffer, int32 len) { return 0; }
 
 
 public:
-	// temp
+	// 수신 관련
 	//BYTE _recvBuffer[1000];
 	RecvBuffer _recvBuffer;
 
+	// 송신 관련
+	std::queue<SendBufferRef> _sendQueue;
+	Atomic<bool> _sendRegistered = false;
 
 private:
 	std::weak_ptr<Service> _service;
@@ -95,6 +100,7 @@ private:
 
 private:
 	// USE_LOCK;
+	std::recursive_mutex _mtx;
 
 	// 수신기능
 
@@ -107,6 +113,7 @@ private:
 	DisconnectEvent _disconnectEvent;
 
 	RecvEvent _recvEvent;
+	SendEvent _sendEvent;
 
 };
 

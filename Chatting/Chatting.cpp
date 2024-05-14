@@ -7,7 +7,7 @@
 #include "ThreadManager.h"
 CoreGlobal Core;
 
-char sendBuffer[] = "Hello World";
+char sendData[] = "Hello World";
 
 class ServerSession : public Session
 {
@@ -22,7 +22,9 @@ public:
     {
         cout << "ServerSession::OnConnected " << endl;
 
-        Send((BYTE*)sendBuffer, sizeof(sendBuffer));
+        SendBufferRef sendBuffer = std::make_shared<SendBuffer>(4096);
+        sendBuffer->CopyData(sendData, sizeof(sendData));
+        Send(sendBuffer);
 
     }
     virtual void OnDisconnected() override
@@ -32,17 +34,20 @@ public:
     }
     virtual int32 OnRecv(BYTE* buffer, int32 len)override
     {
-        cout << "OnRecv Len = " << len << endl;
+        cout << "\nOnRecv Len = " << len;
 
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // 1초 동안 대기
+        std::this_thread::sleep_for(std::chrono::seconds(5)); // 1초 동안 대기
 
-        Send((BYTE*)sendBuffer, sizeof(sendBuffer));
+
+        SendBufferRef sendBuffer = std::make_shared<SendBuffer>(4096);
+        sendBuffer->CopyData(sendData, sizeof(sendData));
+        Send(sendBuffer);
         return len;
     }
 
     virtual void OnSend(int32 len)override
     {
-        cout << "OnSend Len = " << len << endl;
+        cout << "\nOnSend Len = " << len;
     }
 
 
@@ -58,7 +63,9 @@ int main()
         return std::make_shared<ServerSession>(); // 세션을 생성하여 반환
     };
     
-    ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, 1);
+    int32 SessionCount = MAX_CLIENT_SESSION;
+
+    ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
     ASSERT_CRASH(service->Start());
     
     for (int32 i = 0; i < 1; ++i)

@@ -5,6 +5,8 @@
 #include "CoreGlobal.h"
 #include "Type.h"
 
+#include "SendBuffer.h"
+
 #include <winsock2.h>
 #include <ws2tcpip.h> 
 #include <windows.h>
@@ -21,6 +23,7 @@
 #include <map>
 #include <string>
 #include <set>
+#include <queue>
 
 #include <thread>
 #include <mutex>
@@ -50,4 +53,7 @@ using std::vector;
 #define MAX_SIZE 1024
 #define MAX_CLIENT 3
 
+
+
+#define MAX_CLIENT_SESSION 1
 

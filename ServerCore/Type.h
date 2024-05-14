@@ -28,7 +28,8 @@ using IocpObjectRef = std::shared_ptr<class IocpObject>;
 using ListenerRef = std::shared_ptr<class Listener>;
 using SessionRef = std::shared_ptr<class Session>;
 using ServerServiceRef = std::shared_ptr<class ServerService>;
-using ClientServiceRef = std::shared_ptr<class ClientService > ;
+using ClientServiceRef = std::shared_ptr<class ClientService>;
+using SendBufferRef = std::shared_ptr<class SendBuffer>;
 
 
 

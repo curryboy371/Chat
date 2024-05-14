@@ -41,6 +41,7 @@ public:
 
 protected:
 	//USE_LOCK
+	std::recursive_mutex _mtx;
 
 	ServiceType _type;
 	NetAddress _netAddress = {};

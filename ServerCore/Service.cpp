@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Service.h"
 #include "Session.h"
+#include "ThreadManager.h"
 
 Service::Service(ServiceType type, NetAddress address, IocpCoreRef core, SessionFactory factory, int32 maxSessionCount)
     :_type(type), _netAddress(address), _iocpCore(core), _sessionFactory(factory), _maxSessionCount(maxSessionCount)
@@ -38,6 +39,7 @@ SessionRef Service::CreateSession()
 void Service::AddSession(SessionRef session)
 {
     // WRITE_LOCK
+    MutexGuard LockGuard(_mtx);
 
     _sessionCount++;
     _sessions.insert(session);
@@ -47,6 +49,7 @@ void Service::AddSession(SessionRef session)
 void Service::ReleaseSession(SessionRef session)
 {
     // WRITE_LOCK
+    MutexGuard LockGuard(_mtx);
     ASSERT_CRASH(_sessions.erase(session) != 0);
 
     --_sessionCount;

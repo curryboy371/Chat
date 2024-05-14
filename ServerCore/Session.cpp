@@ -5,6 +5,8 @@
 #include "Service.h"
 #include "IocpEvent.h"
 
+#include "ThreadManager.h"
+
 Session::Session()
     :_recvBuffer(BUFFER_SIZE)
 {
@@ -27,14 +29,31 @@ void Session::Send(BYTE* buffer, int32 len)
     // SendEvnet를 어떤식으로 관리할지. 단일 or 복수
     // wsasend는 중첩하는지
 
-    //temp
-    SendEvent* sendEvent = new SendEvent;
-    sendEvent->owner = shared_from_this(); // add ref
-    sendEvent->buffer.resize(len);
-    std::memcpy(sendEvent->buffer.data(), buffer, len);
-
     //WRITE_LOCK
-    RegisterSend(sendEvent);
+    MutexGuard LockGuard(_mtx);
+
+    RegisterSend();
+}
+
+void Session::Send(SendBufferRef sendBuffer)
+{
+    //WRITE_LOCK
+    MutexGuard LockGuard(_mtx);
+
+    _sendQueue.push(sendBuffer);
+
+    /* 
+        if(_sendRegisterd == false)
+        {
+            _sendRegistered = true;
+            RegisterSend();
+        }
+    */
+
+    if (_sendRegistered.exchange(true) == false)
+    {
+        RegisterSend();
+    }
 }
 
 bool Session::Connect()
@@ -84,7 +103,13 @@ void Session::Dispatch(IocpEvent* iocpEvent, int32 numOfBytes)
         break;
 
     case EventType::Send:
-        ProcessSend(static_cast<SendEvent*>(iocpEvent), numOfBytes);
+        if (numOfBytes > 12)
+        {
+            int32 itest = 0;
+
+            itest = 12;
+        }
+        ProcessSend(numOfBytes);
         break;
 
 
@@ -186,24 +211,53 @@ void Session::RegisterRecv()
 
         if (errCode != WSA_IO_PENDING)
         {
-            HandleError(errCode);
+            HandleError(__func__, errCode);
             _recvEvent.owner = nullptr; // Release REf
         }
     }
 }
 
-void Session::RegisterSend(SendEvent* sendEvent)
+void Session::RegisterSend()
 {
     if (IsConnected() == false)
     {
         return;
     }
 
-    WSABUF wsaBuf;
+    _sendEvent.Init();
+    _sendEvent.owner = shared_from_this(); // Add Ref
 
-    wsaBuf.buf = (char*)sendEvent->buffer.data();
-    wsaBuf.len = (ULONG)sendEvent->buffer.size();
+    // 보낼 데이터를 sendEvent에 등록
+    {
+        //WRITE_LOCK
+        MutexGuard LockGuard(_mtx);
 
+
+        int32 writeSize = 0;
+        while (_sendQueue.empty() == false)
+        {
+            SendBufferRef sendBuffer = _sendQueue.front();
+
+            writeSize += sendBuffer->WriteSize();
+
+            //TODO 예외 체크 사이즈가 너무 커지는 경우 끊는 것
+
+            _sendQueue.pop();
+            _sendEvent.sendBuffers.push_back(sendBuffer);
+        }
+    }
+
+    // Scatter-Gather ( 데이터를 모아 한방에 보냄 )
+    std::vector<WSABUF> wsaBufs;
+    wsaBufs.reserve(_sendEvent.sendBuffers.size());
+    
+    for (SendBufferRef sendBuffer : _sendEvent.sendBuffers)
+    {
+        WSABUF wsaBuf;
+        wsaBuf.buf = reinterpret_cast<char*>(sendBuffer->Buffer());
+        wsaBuf.len = static_cast<LONG>(sendBuffer->WriteSize());
+        wsaBufs.push_back(wsaBuf);
+    }
 
     DWORD numOfByte = 0;
 
@@ -211,18 +265,17 @@ void Session::RegisterSend(SendEvent* sendEvent)
     // WSASend는 Multi Thread에서 Safe한가?
     // 그렇지 않기 때문에 호출이전에 lock을 걸어줘야함.
     // 
-    if (SOCKET_ERROR == ::WSASend(_socket, &wsaBuf, 1, OUT & numOfByte, 0, sendEvent, nullptr))
+    if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT & numOfByte, 0, &_sendEvent, nullptr))
     {
         int32 errCode = ::WSAGetLastError();
         if (errCode != WSA_IO_PENDING)
         {
-            HandleError(errCode);
-            sendEvent->owner = nullptr; // Release Ref
-            delete sendEvent;
+            HandleError(__func__, errCode);
+            _sendEvent.owner = nullptr; // Release Ref
+            _sendEvent.sendBuffers.clear(); // release ref
+            _sendRegistered.store(false);
         }
     }
-
-
 
 }
 
@@ -286,10 +339,10 @@ void Session::ProcessRecv(int32 numOfBytes)
 
 }
 
-void Session::ProcessSend(SendEvent* sendEvent, int32 numOfBytes)
+void Session::ProcessSend(int32 numOfBytes)
 {
-    sendEvent->owner = nullptr; // relese ref
-    delete sendEvent;
+    _sendEvent.owner = nullptr; // relese ref
+    _sendEvent.sendBuffers.clear(); // release ref
 
     if (numOfBytes == 0)
     {
@@ -297,10 +350,21 @@ void Session::ProcessSend(SendEvent* sendEvent, int32 numOfBytes)
         return;
     }
 
+    // 컨텐츠 
     OnSend(numOfBytes);
+
+    MutexGuard LockGuard(_mtx);
+    if (_sendQueue.empty())
+    {
+        _sendRegistered.store(false);
+    }
+    else
+    {
+        RegisterSend();
+    }
 }
 
-void Session::HandleError(int32 errCode)
+void Session::HandleError(const char* FuncName, int32 errCode)
 {
     switch (errCode)
     {
@@ -309,7 +373,7 @@ void Session::HandleError(int32 errCode)
         Disconnect(L"Handle Error");
     default:
         // TODO Error Log..
-        std::cout << "err..r.r." << '\n';
+        std::cout << "HandleError" << FuncName << " " << errCode << '\n';
         break;
     }
 
