@@ -8,7 +8,7 @@
 #include "ThreadManager.h"
 
 Session::Session()
-    :_recvBuffer(BUFFER_SIZE)
+    :_recvBuffer(SESSION_BUFFER_SIZE)
 {
     _socket = SocketUtils::CreateSocket();
     if (_socket == UINT64_MAX)

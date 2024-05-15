@@ -23,7 +23,7 @@ int main()
     ServerServiceRef service = std::make_shared<ServerService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
     ASSERT_CRASH(service->Start());
 
-    for (int32 i = 0; i < 1; ++i)
+    for (int32 i = 0; i < 3; ++i)
     {
         GThreadManager->Launch([=]()
             {

@@ -7,7 +7,7 @@
 #include "ThreadManager.h"
 CoreGlobal Core;
 
-char sendData[] = "Hello World";
+char sendData[500] = "sdfsdf";
 
 class ServerSession : public Session
 {
@@ -22,8 +22,13 @@ public:
     {
         cout << "ServerSession::OnConnected " << endl;
 
-        SendBufferRef sendBuffer = std::make_shared<SendBuffer>(4096);
-        sendBuffer->CopyData(sendData, sizeof(sendData));
+        //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
+        //sendBuffer->CopyData(sendData, sizeof(sendData));
+
+        SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
+        std::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
+        sendBuffer->Close(sizeof(sendData));
+
         Send(sendBuffer);
 
     }
@@ -36,11 +41,17 @@ public:
     {
         cout << "\nOnRecv Len = " << len;
 
-        std::this_thread::sleep_for(std::chrono::seconds(5)); // 1초 동안 대기
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 1초 동안 대기
 
 
-        SendBufferRef sendBuffer = std::make_shared<SendBuffer>(4096);
-        sendBuffer->CopyData(sendData, sizeof(sendData));
+        //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
+        //sendBuffer->CopyData(sendData, sizeof(sendData));
+
+        SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
+        std::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
+        sendBuffer->Close(sizeof(sendData));
+
+
         Send(sendBuffer);
         return len;
     }
@@ -68,7 +79,7 @@ int main()
     ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
     ASSERT_CRASH(service->Start());
     
-    for (int32 i = 0; i < 1; ++i)
+    for (int32 i = 0; i < 5; ++i)
     {
         GThreadManager->Launch([=]()
             {

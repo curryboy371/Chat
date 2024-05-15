@@ -20,6 +20,7 @@
 #include <sstream>
 
 #include <vector>
+#include <array>
 #include <map>
 #include <string>
 #include <set>
@@ -55,5 +56,7 @@ using std::vector;
 
 
 
-#define MAX_CLIENT_SESSION 1
+#define MAX_CLIENT_SESSION 20
+
+#define BUFFER_SIZE 512
 

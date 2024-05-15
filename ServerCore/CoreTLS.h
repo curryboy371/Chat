@@ -1,9 +1,5 @@
 #pragma once
 
+#include <iostream>
 extern thread_local unsigned int LThreadId;
-
-
-class CoreTLS
-{
-};
-
+extern thread_local std::shared_ptr<class SendBufferChunk> LSendBufferChunk;

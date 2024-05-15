@@ -5,15 +5,20 @@
 
 int32 GameSession::OnRecv(BYTE* buffer, int32 len)
 {
-    cout << "\nOnRecv Len = " << len;
+    //cout << "\nOnRecv Len = " << len;
 
-    SendBufferRef sendBuffer = std::make_shared<SendBuffer>(4096); // 이러면 보낼때마다 생성하는데?
-    sendBuffer->CopyData(buffer, len);
+    //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE); // 이러면 보낼때마다 생성하는데?
+    //sendBuffer->CopyData(buffer, len);
+
+    SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
+    std::memcpy(sendBuffer->Buffer(), buffer, len);
+    sendBuffer->Close(len);
 
     //for (int32 i = 0; i < 10; ++i)
     {
         GSessionManager.Broadcast(sendBuffer);
     }
+
     return len;
 }
 
@@ -46,5 +51,5 @@ void GameSession::OnDisconnected()
 
 void GameSession::OnSend(int32 len)
 {
-    cout << "\nOnSend Len = " << len;
+    //cout << "\nOnSend Len = " << len;
 }
