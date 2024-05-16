@@ -26,6 +26,9 @@ public:
 
 	// OUT 안되는데??
 	template<typename T>
+	BufferReader& operator>>(T&& dest);
+
+	template<typename T>
 	BufferReader& operator>>(T& dest);
 
 	//template<typename T>
@@ -48,8 +51,24 @@ inline BufferReader& BufferReader::operator>>(T& dest)
 	// 자료형 크기만큼 pos를 이동시킴
 	// 왜냐면..dest에 data를 빼주는거...
 
+	//using DataType = std::remove_reference_t<T>;
 
 	dest = *reinterpret_cast<T*>(&_buffer[_pos]);
 	_pos += sizeof(T);
 	return *this;
+
+}
+
+template<typename T>
+inline BufferReader& BufferReader::operator>>(T&& dest)
+{
+	// 자료형 크기만큼 pos를 이동시킴
+	// 왜냐면..dest에 data를 빼주는거...
+
+	//using DataType = std::remove_reference_t<T>;
+
+	dest = *reinterpret_cast<T*>(&_buffer[_pos]);
+	_pos += sizeof(T);
+	return *this;
+
 }

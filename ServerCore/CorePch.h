@@ -1,14 +1,5 @@
 #pragma once
 
-#include "CoreTLS.h"
-#include "CoreMacro.h"
-#include "CoreGlobal.h"
-#include "Type.h"
-
-#include "SendBuffer.h"
-#include "BufferReader.h"
-#include "BufferWriter.h"
-
 #include <winsock2.h>
 #include <ws2tcpip.h> 
 #include <windows.h>
@@ -40,6 +31,17 @@
 #include <nlohmann/json.hpp>
 
 
+#include "CoreTLS.h"
+#include "CoreMacro.h"
+#include "CoreGlobal.h"
+#include "Type.h"
+
+
+#include "SendBuffer.h"
+#include "BufferReader.h"
+#include "BufferWriter.h"
+#include "Session.h"
+
 #pragma comment(lib, "Ws2_32.lib")
 
 
@@ -60,6 +62,6 @@ using std::vector;
 
 #define MAX_CLIENT_SESSION 2
 
-#define BUFFER_SIZE 20
+#define BUFFER_SIZE 128
 #define DATA_SIZE 16
 

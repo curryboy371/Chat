@@ -35,11 +35,9 @@ void GameSession::OnSend(int32 len)
     //cout << "\nOnSend Len = " << len;
 }
 
-int32 GameSession::OnRecvPacket(BYTE* buffer, int32 len)
+void GameSession::OnRecvPacket(BYTE* buffer, int32 len)
 {
     //cout << "\nOnRecv Len = " << len;
-
-
 
     BufferReader bufferReader(buffer, len);
     PacketHeader header;
@@ -65,6 +63,4 @@ int32 GameSession::OnRecvPacket(BYTE* buffer, int32 len)
             GSessionManager.Broadcast(sendBuffer);
         }
     }
-
-    return header.size;
 }

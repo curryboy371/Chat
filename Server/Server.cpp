@@ -10,6 +10,8 @@
 #include "GameSession.h"
 #include "GameSessionManager.h"
 
+#include "ServerPacketHandler.h"
+
 char sendData[DATA_SIZE] = "server_broad";
 
 CoreGlobal Core;
@@ -45,15 +47,27 @@ int main()
 
         if (GSessionManager.GetSessionCount() > 0)
         {
+            std::vector<BuffData> buffs;
+
+            BuffData buff;
+            buff.buffId = 1;
+            buff.remainTime = 1.f;
+            buffs.push_back(buff);
+
+            buff.buffId = 2;
+            buff.remainTime = 2.f;
+            buffs.push_back(buff);
+
+            buff.buffId = 3;
+            buff.remainTime = 3.f;
+            buffs.push_back(buff);
+
             PacketHeader header;
             header.id = 1;
             header.size = DATA_SIZE;
 
-            SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-            BufferWriter bufferWriter(sendBuffer->Buffer(), sendBuffer->AllocSize());
-            bufferWriter << header;
-            bufferWriter.Write(sendData, header.size);
-            sendBuffer->Close(sendBuffer->AllocSize());
+            SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs);
+
             GSessionManager.Broadcast(sendBuffer);
         }
 

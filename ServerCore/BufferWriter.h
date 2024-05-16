@@ -9,7 +9,7 @@ public:
 
 	BYTE* Buffer() { return _buffer; }
 	uint32 Size() { return _size; }
-	uint32 ReadSize() { return _pos; }
+	uint32 WriteSize() { return _pos; }
 	uint32 FreeSize() { return _size - _pos; }
 
 	template<typename T>
@@ -61,7 +61,8 @@ inline BufferWriter& BufferWriter::operator<<(T& src)
 template<typename T>
 inline BufferWriter& BufferWriter::operator<<(T&& src)
 {
-	*reinterpret_cast<T*>(&_buffer[_pos]) = src;
+	using DataType = std::remove_reference_t<T>;
+	*reinterpret_cast<DataType*>(&_buffer[_pos]) = std::forward<DataType>(src);
 	_pos += sizeof(T);
 	return *this;
 }
