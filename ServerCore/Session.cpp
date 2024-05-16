@@ -447,7 +447,7 @@ int32 PacketSession::OnRecv(BYTE* buffer, int32 len)
 
         //BYTE* packetBuffer = &buffer[totalPacketLen + headerSize];
 
-        OnRecvPacket(&buffer[processLen], packetSize);
+        OnRecvPacket(&buffer[processLen], packetSize + headerSize);
 
         // check 출력
         BYTE tempBuffer[BUFFER_SIZE];

@@ -24,16 +24,17 @@ public:
 
         //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
         //sendBuffer->CopyData(sendData, sizeof(sendData));
-        PacketHeader packetHeader;
-        packetHeader.id = 1;
-        packetHeader.size = DATA_SIZE;
-
+        PacketHeader header;
+        header.id = 1;
+        header.size = DATA_SIZE;
 
         SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
+        BufferWriter bufferWriter(sendBuffer->Buffer(), sendBuffer->AllocSize());
+        bufferWriter << header;
+        bufferWriter.Write(sendData, header.size);
 
-        std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), sizeof(PacketHeader)); // heaer
-        std::memcpy(sendBuffer->Buffer() + sizeof(PacketHeader), sendData, sizeof(sendData));   // data
 
+        //check
         PacketHeader TemppacketHeader;
         BYTE tempByte[BUFFER_SIZE];
 
@@ -42,8 +43,7 @@ public:
 
 
 
-
-        sendBuffer->Close(sizeof(PacketHeader) + sizeof(sendData));
+        sendBuffer->Close(sendBuffer->AllocSize());
 
         Send(sendBuffer);
 
@@ -55,24 +55,31 @@ public:
     }
     virtual int32 OnRecvPacket(BYTE* buffer, int32 len)override
     {
-        int32 headerSize = sizeof(PacketHeader);
-        PacketHeader packetHeader;
-        packetHeader.id = 1;
-        packetHeader.size = DATA_SIZE;
+        
+        BYTE tempBuffer[BUFFER_SIZE];
+        std::memcpy(tempBuffer, &buffer[4], len -4);
+        //std::cout << "\nPacketSession::OnRecv : " << tempBuffer << packetSize + headerSize;
 
-        //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
-        //sendBuffer->CopyData(sendData, sizeof(sendData));
+        BufferReader bufferReader(buffer, len);
+        PacketHeader header;
+        bufferReader >> header; // PacketHeader 크기만큼 pos를 이동, header data 넣어줌.
 
-        cout << "\OnRecvPacket Len = " << len << " Data " << &buffer[headerSize];
+        //uint64 id;
+        //uint32 hp;
+        //bufferReader >> id >> hp; // 또 자료형 크기만큼 pos 이동... 이거 왜한거????
+
+        char recvBuffer[BUFFER_SIZE];
+        bufferReader.Read(recvBuffer, header.size); // pos가 이동된 상태... data만 읽으면 되지 않음?
+
+        cout << "\nRecvPacket Len = " << len << " Data " << recvBuffer;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 1초 동안 대기
 
         SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-
-        std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), sizeof(PacketHeader)); // heaer
-        std::memcpy(sendBuffer->Buffer() + sizeof(PacketHeader), sendData, sizeof(sendData));   // data
-        sendBuffer->Close(sizeof(PacketHeader) + sizeof(sendData));
-
+        BufferWriter bufferWriter(sendBuffer->Buffer(), sendBuffer->AllocSize());
+        bufferWriter << header;
+        bufferWriter.Write(recvBuffer, header.size);
+        sendBuffer->Close(sendBuffer->AllocSize());
 
         Send(sendBuffer);
         return len;

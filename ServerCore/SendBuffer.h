@@ -13,7 +13,8 @@ public:
 
 
 	BYTE* Buffer() { return _buffer; }
-	int32 WriteSize() { return _writeSize; }
+	uint32 WriteSize() { return _writeSize; }
+	uint32 AllocSize() { return _allocSize; }
 	void Close(uint32 writeSize);
 
 	//int32 Capacity() { return static_cast<int32>(_buffer.size()); }

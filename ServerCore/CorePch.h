@@ -6,6 +6,8 @@
 #include "Type.h"
 
 #include "SendBuffer.h"
+#include "BufferReader.h"
+#include "BufferWriter.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h> 
@@ -56,7 +58,7 @@ using std::vector;
 
 
 
-#define MAX_CLIENT_SESSION 1000
+#define MAX_CLIENT_SESSION 2
 
 #define BUFFER_SIZE 20
 #define DATA_SIZE 16

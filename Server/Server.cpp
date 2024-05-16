@@ -45,22 +45,15 @@ int main()
 
         if (GSessionManager.GetSessionCount() > 0)
         {
-            PacketHeader packetHeader;
-            packetHeader.id = 1;
-            packetHeader.size = DATA_SIZE;
+            PacketHeader header;
+            header.id = 1;
+            header.size = DATA_SIZE;
 
             SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-
-            std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), sizeof(PacketHeader)); // heaer
-            std::memcpy(sendBuffer->Buffer() + sizeof(PacketHeader), sendData, sizeof(sendData));   // data
-
-            PacketHeader TemppacketHeader;
-            BYTE tempByte[BUFFER_SIZE];
-
-            std::memcpy(&TemppacketHeader, sendBuffer->Buffer(), sizeof(PacketHeader)); // heaer
-            std::memcpy(&tempByte, sendBuffer->Buffer() + sizeof(PacketHeader), sizeof(sendData)); // data
-
-            sendBuffer->Close(sizeof(PacketHeader) + sizeof(sendData));
+            BufferWriter bufferWriter(sendBuffer->Buffer(), sendBuffer->AllocSize());
+            bufferWriter << header;
+            bufferWriter.Write(sendData, header.size);
+            sendBuffer->Close(sendBuffer->AllocSize());
             GSessionManager.Broadcast(sendBuffer);
         }
 

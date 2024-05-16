@@ -39,26 +39,26 @@ int32 GameSession::OnRecvPacket(BYTE* buffer, int32 len)
 {
     //cout << "\nOnRecv Len = " << len;
 
-    //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE); // 이러면 보낼때마다 생성하는데?
-    //sendBuffer->CopyData(buffer, len);
+
+
+    BufferReader bufferReader(buffer, len);
+    PacketHeader header;
+    bufferReader >> header; // PacketHeader 크기만큼 pos를 이동, header data 넣어줌.
+
+    BYTE recvBuffer[BUFFER_SIZE];
+    bufferReader.Read(recvBuffer, header.size); // pos가 이동된 상태... data만 읽으면 되지 않음?
 
     int32 headerSize = sizeof(PacketHeader);
-    PacketHeader packetHeader;
-    BYTE dataBuffer[DATA_SIZE];
-
-    std::memcpy(&packetHeader, buffer, headerSize); // heaer
-    std::memcpy(&dataBuffer, buffer + headerSize, packetHeader.size); // data
 
     bool breflect = false;
 
     if (breflect)
     {
         SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-
-        std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), headerSize); // heaer
-        std::memcpy(sendBuffer->Buffer() + headerSize, &buffer[headerSize], packetHeader.size);   // data
-
-        sendBuffer->Close(sizeof(PacketHeader) + packetHeader.size);
+        BufferWriter bufferWriter(sendBuffer->Buffer(), sendBuffer->AllocSize());
+        bufferWriter << header;
+        bufferWriter.Write(recvBuffer, header.size);
+        sendBuffer->Close(sendBuffer->AllocSize());
 
         //for (int32 i = 0; i < 10; ++i)
         {
@@ -66,5 +66,5 @@ int32 GameSession::OnRecvPacket(BYTE* buffer, int32 len)
         }
     }
 
-    return packetHeader.size;
+    return header.size;
 }

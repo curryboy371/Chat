@@ -11,7 +11,7 @@ void GameSessionManager::Add(GameSessionRef session)
 {
 	// WRITE_LOCK
 	MutexGuard LockGuard(_mtx);
-	uint32 index = _sessions.size();
+	uint32 index = static_cast<uint32>(_sessions.size());
 	session->SetSessionID(index);
 	_sessions.emplace(index, session);
 	std::cout << "\nAddSession ID " << session->GetSessionID();
@@ -42,5 +42,5 @@ void GameSessionManager::Broadcast(SendBufferRef sendBuffer)
 
 int32 GameSessionManager::GetSessionCount()
 {
-	return _sessions.size();
+	return static_cast<int32>(_sessions.size());
 }
