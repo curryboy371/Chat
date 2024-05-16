@@ -56,7 +56,8 @@ using std::vector;
 
 
 
-#define MAX_CLIENT_SESSION 20
+#define MAX_CLIENT_SESSION 1000
 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 20
+#define DATA_SIZE 16
 

@@ -32,12 +32,9 @@ public:
 
 public:
 	// 외부에서 사용
-	void Send(BYTE* buffer, int32 len);
 	void Send(SendBufferRef sendBuffer);
 	bool Connect();
 	void Disconnect(const WCHAR* cause); // 세션 연결 끊기
-
-
 
 	std::shared_ptr<Service> GetService() { return _service.lock(); } // lock()함수는 weak를 shared로 변환함
 	void SetService(std::shared_ptr<Service> service) { _service = service; }
@@ -58,6 +55,12 @@ public:
 	// IocpObject을(를) 통해 상속됨
 	virtual HANDLE GetHandle() override;
 	virtual void Dispatch(IocpEvent* iocpEvent, int32 numOfBytes) override;
+
+
+	void SetSessionID(uint32 session_id) { _session_id = session_id; }
+	uint32 GetSessionID() { return _session_id; }
+
+	void CleanBuffer();
 
 private:
 	/* 전송 관련*/
@@ -91,6 +94,7 @@ public:
 	Atomic<bool> _sendRegistered = false;
 
 private:
+	uint32 _session_id = 0;
 	std::weak_ptr<Service> _service;
 
 	SOCKET _socket = INVALID_SOCKET;
@@ -117,3 +121,27 @@ private:
 
 };
 
+
+struct PacketHeader
+{
+	uint16 size;
+	uint16 id;
+};
+
+
+class PacketSession : public Session
+{
+public:
+	PacketSession();
+	virtual ~PacketSession();
+
+public:
+	PacketSessionRef GetPacketSessionRef() { return std::static_pointer_cast<PacketSession>(shared_from_this()); }
+
+protected:
+	virtual void  OnSend(int32 Len);
+
+	virtual int32 OnRecv(BYTE* buffer, int32 len) sealed;
+	virtual int32 OnRecvPacket(BYTE* buffer, int32 len) abstract;
+
+};

@@ -23,37 +23,44 @@ Session::~Session()
     SocketUtils::Close(_socket);
 }
 
-void Session::Send(BYTE* buffer, int32 len)
-{
-    // 버퍼 관리
-    // SendEvnet를 어떤식으로 관리할지. 단일 or 복수
-    // wsasend는 중첩하는지
-
-    //WRITE_LOCK
-    MutexGuard LockGuard(_mtx);
-
-    RegisterSend();
-}
-
 void Session::Send(SendBufferRef sendBuffer)
 {
-    //WRITE_LOCK
-    MutexGuard LockGuard(_mtx);
+    if (IsConnected() == false)
+    {
+        return;
+    }
 
-    _sendQueue.push(sendBuffer);
+    // Lock 경합으로 sendQueue를 채우고
+    bool registerSend = false;
+    {
+        //WRITE_LOCK
+        MutexGuard LockGuard(_mtx);
 
-    /* 
+        _sendQueue.push(sendBuffer);
+
+        /*
         if(_sendRegisterd == false)
         {
             _sendRegistered = true;
-            RegisterSend();
+            registerSend = true;
         }
-    */
+        */
 
-    if (_sendRegistered.exchange(true) == false)
+        if (_sendRegistered.exchange(true) == false)
+        {
+            registerSend = true;
+        }
+    }
+
+    // lock경합 없이 registerSend 호출
+    if (registerSend)
     {
         RegisterSend();
     }
+
+
+
+
 }
 
 bool Session::Connect()
@@ -71,10 +78,10 @@ void Session::Disconnect(const WCHAR* cause)
 
     std::wcout << "Disconenect " << cause << '\n';
 
-    OnDisconnected(); 
+    // queue 날려줘야함.
 
-    SocketUtils::Close(_socket);
-    GetService()->ReleaseSession(GetSessionRef());
+    CleanBuffer();
+
 
 
     RegisterDisconnect();
@@ -116,6 +123,23 @@ void Session::Dispatch(IocpEvent* iocpEvent, int32 numOfBytes)
     default:
         break;
     }
+}
+
+void Session::CleanBuffer()
+{
+    // lock을 잡는데 가장 우선순위가 높아야할듯?
+    //WRITE_LOCK
+    MutexGuard LockGuard(_mtx);
+
+
+    _sendEvent.sendBuffers.clear();
+       
+    while (_sendQueue.empty() == false)
+    {
+        _sendQueue.pop();
+    }
+
+    _recvBuffer.Clean();
 }
 
 bool Session::RegisterConnect()
@@ -265,6 +289,7 @@ void Session::RegisterSend()
     // WSASend는 Multi Thread에서 Safe한가?
     // 그렇지 않기 때문에 호출이전에 lock을 걸어줘야함.
     // 
+    std::cout << "\n Send Session ID " << GetSessionID();
     if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT & numOfByte, 0, &_sendEvent, nullptr))
     {
         int32 errCode = ::WSAGetLastError();
@@ -276,7 +301,6 @@ void Session::RegisterSend()
             _sendRegistered.store(false);
         }
     }
-
 }
 
 void Session::ProcessConnect()
@@ -302,6 +326,9 @@ void Session::ProcessDisconnect()
 {
     _disconnectEvent.owner = nullptr;
 
+    OnDisconnected();
+    SocketUtils::Close(_socket);
+    GetService()->ReleaseSession(GetSessionRef());
 }
 
 void Session::ProcessRecv(int32 numOfBytes)
@@ -370,6 +397,7 @@ void Session::HandleError(const char* FuncName, int32 errCode)
     {
     case WSAECONNRESET:
     case WSAECONNABORTED:
+        //_bpendingKill.store(true);
         Disconnect(L"Handle Error");
     default:
         // TODO Error Log..
@@ -378,4 +406,57 @@ void Session::HandleError(const char* FuncName, int32 errCode)
     }
 
 
+}
+
+PacketSession::PacketSession()
+{
+}
+
+PacketSession::~PacketSession()
+{
+}
+
+void PacketSession::OnSend(int32 Len)
+{
+
+
+}
+
+int32 PacketSession::OnRecv(BYTE* buffer, int32 len)
+{
+    int32 headerSize = sizeof(PacketHeader);
+
+    int32 processLen = 0;
+    // 여러 패킷을 뭉쳐서 받는다고 생각하고
+    while (true)
+    {
+        int32 remainSize = len - processLen; 
+        if (remainSize < headerSize) // header 파싱 여부
+        {
+            break;
+        }
+
+        PacketHeader header = *reinterpret_cast<PacketHeader*>(&buffer[processLen]);
+
+        int32 packetSize = header.size;
+        int32 packetID = header.id;
+        if (remainSize < packetSize) // data 파싱 여부
+        {
+            break;
+        }
+
+        //BYTE* packetBuffer = &buffer[totalPacketLen + headerSize];
+
+        OnRecvPacket(&buffer[processLen], packetSize);
+
+        // check 출력
+        BYTE tempBuffer[BUFFER_SIZE];
+        std::memcpy(tempBuffer, &buffer[processLen], packetSize);
+        //std::cout << "\nPacketSession::OnRecv : " << tempBuffer << packetSize + headerSize;
+
+        processLen += headerSize + packetSize;
+    }
+
+    std::cout << "\nPacketSession::OnRecv Total: " << len;
+    return len;
 }

@@ -7,9 +7,9 @@
 #include "ThreadManager.h"
 CoreGlobal Core;
 
-char sendData[500] = "sdfsdf";
+char sendData[DATA_SIZE] = "abcde";
 
-class ServerSession : public Session
+class ServerSession : public PacketSession
 {
 public:
 
@@ -24,10 +24,26 @@ public:
 
         //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
         //sendBuffer->CopyData(sendData, sizeof(sendData));
+        PacketHeader packetHeader;
+        packetHeader.id = 1;
+        packetHeader.size = DATA_SIZE;
+
 
         SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-        std::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
-        sendBuffer->Close(sizeof(sendData));
+
+        std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), sizeof(PacketHeader)); // heaer
+        std::memcpy(sendBuffer->Buffer() + sizeof(PacketHeader), sendData, sizeof(sendData));   // data
+
+        PacketHeader TemppacketHeader;
+        BYTE tempByte[BUFFER_SIZE];
+
+        std::memcpy(&TemppacketHeader, sendBuffer->Buffer(), sizeof(PacketHeader)); // heaer
+        std::memcpy(&tempByte, sendBuffer->Buffer() + sizeof(PacketHeader), sizeof(sendData)); // data
+
+
+
+
+        sendBuffer->Close(sizeof(PacketHeader) + sizeof(sendData));
 
         Send(sendBuffer);
 
@@ -37,19 +53,25 @@ public:
         cout << "ServerSession::OnDisconnected " << endl;
 
     }
-    virtual int32 OnRecv(BYTE* buffer, int32 len)override
+    virtual int32 OnRecvPacket(BYTE* buffer, int32 len)override
     {
-        cout << "\nOnRecv Len = " << len;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 1초 동안 대기
-
+        int32 headerSize = sizeof(PacketHeader);
+        PacketHeader packetHeader;
+        packetHeader.id = 1;
+        packetHeader.size = DATA_SIZE;
 
         //SendBufferRef sendBuffer = std::make_shared<SendBuffer>(BUFFER_SIZE);
         //sendBuffer->CopyData(sendData, sizeof(sendData));
 
+        cout << "\OnRecvPacket Len = " << len << " Data " << &buffer[headerSize];
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 1초 동안 대기
+
         SendBufferRef sendBuffer = GSendBufferManager->Open(BUFFER_SIZE);
-        std::memcpy(sendBuffer->Buffer(), sendData, sizeof(sendData));
-        sendBuffer->Close(sizeof(sendData));
+
+        std::memcpy(sendBuffer->Buffer(), reinterpret_cast<BYTE*>(&packetHeader), sizeof(PacketHeader)); // heaer
+        std::memcpy(sendBuffer->Buffer() + sizeof(PacketHeader), sendData, sizeof(sendData));   // data
+        sendBuffer->Close(sizeof(PacketHeader) + sizeof(sendData));
 
 
         Send(sendBuffer);
@@ -79,18 +101,17 @@ int main()
     ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
     ASSERT_CRASH(service->Start());
     
-    for (int32 i = 0; i < 5; ++i)
+    for (int32 i = 0; i < 8; ++i)
     {
         GThreadManager->Launch([=]()
             {
                 while (true)
                 {
-                    // 이렇게 하면 공용자원 안 건드나?
                     service->GetIocpCore()->Dispatch();
                 }
             });
     }
-    
+
     GThreadManager->Join();
     
     return 0;

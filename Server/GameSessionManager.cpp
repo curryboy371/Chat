@@ -11,15 +11,19 @@ void GameSessionManager::Add(GameSessionRef session)
 {
 	// WRITE_LOCK
 	MutexGuard LockGuard(_mtx);
-	_sessions.insert(session);
+	uint32 index = _sessions.size();
+	session->SetSessionID(index);
+	_sessions.emplace(index, session);
+	std::cout << "\nAddSession ID " << session->GetSessionID();
+
 }
 
 void GameSessionManager::Remove(GameSessionRef session)
 {
 	// WRITE_LOCK
 	MutexGuard LockGuard(_mtx);
-	_sessions.erase(session);
-
+	std::cout << "\nRemoveSession ID " << session->GetSessionID();
+	_sessions.erase(session->GetSessionID());
 }
 
 void GameSessionManager::Broadcast(SendBufferRef sendBuffer)
@@ -27,12 +31,13 @@ void GameSessionManager::Broadcast(SendBufferRef sendBuffer)
 	// WRITE_LOCK
 	MutexGuard LockGuard(_mtx);
 
-	for (GameSessionRef session : _sessions)
+	for (auto& sessionPair : _sessions)
 	{
-		session->Send(sendBuffer);
+		auto& sessionID = sessionPair.first;
+		auto& sessionPtr = sessionPair.second;
+
+		sessionPtr->Send(sendBuffer);
 	}
-
-
 }
 
 int32 GameSessionManager::GetSessionCount()
