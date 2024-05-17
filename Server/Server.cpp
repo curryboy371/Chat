@@ -47,26 +47,41 @@ int main()
 
         if (GSessionManager.GetSessionCount() > 0)
         {
-            std::vector<BuffData> buffs;
 
-            BuffData buff;
-            buff.buffId = 1;
-            buff.remainTime = 1.f;
-            buffs.push_back(buff);
+            // send open, writer init size, static data fill...
+            PKT_S_TEST_WRITE pkt(1, 2, 3);
 
-            buff.buffId = 2;
-            buff.remainTime = 2.f;
-            buffs.push_back(buff);
+            // dynamic data reserve, offset, buffcount set 
+            PKT_S_TEST_WRITE::BuffsList buffList =  pkt.ReserveBuffsList(3);
+            buffList[0] = { 1, 1.f };
+            buffList[1] = { 2, 2.f };
+            buffList[2] = { 3, 3.f };
 
-            buff.buffId = 3;
-            buff.remainTime = 3.f;
-            buffs.push_back(buff);
 
-            PacketHeader header;
-            header.id = 1;
-            header.size = DATA_SIZE;
+            PKT_S_TEST_WRITE::VictimList victimList1 = pkt.ReserveVictimList(&buffList[0], 3);
+            victimList1[0].userId = 1;
+            victimList1[0].remainHp = 100;
+            victimList1[1].userId = 2;
+            victimList1[1].remainHp = 200;
+            victimList1[2].userId = 3;
+            victimList1[2].remainHp = 300;
 
-            SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs);
+
+            PKT_S_TEST_WRITE::VictimList victimList2 = pkt.ReserveVictimList(&buffList[1], 3);
+            victimList2[0].userId = 1;
+            victimList2[0].remainHp = 100;
+            victimList2[1].userId = 2;
+            victimList2[1].remainHp = 200;
+            victimList2[2].userId = 3;
+            victimList2[2].remainHp = 300;
+            
+            PKT_S_TEST_WRITE::VictimList victimList3 = pkt.ReserveVictimList(&buffList[2], 2);
+            victimList3[0].userId = 1;
+            victimList3[0].remainHp = 100;
+            victimList3[1].userId = 2;
+            victimList3[1].remainHp = 200;
+
+            SendBufferRef sendBuffer = pkt.CloseAndReturn();
 
             GSessionManager.Broadcast(sendBuffer);
         }

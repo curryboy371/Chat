@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ChattingClient.h"
 
 ChatClient::ChatClient()

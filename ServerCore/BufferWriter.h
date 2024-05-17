@@ -18,7 +18,7 @@ public:
 
 
 	template<typename T>
-	T* Reserve();
+	T* Reserve(uint16 count = 1);
 
 	// OUT 안되는데??
 	template<typename T>
@@ -35,17 +35,17 @@ private:
 };
 
 template<typename T>
-inline T* BufferWriter::Reserve()
+inline T* BufferWriter::Reserve(uint16 count/* = 1*/)
 {
 	// pos를 size만큼 늘려줌...
 
-	if (FreeSize() < sizeof(T))
+	if (FreeSize() < sizeof(T) * count)
 	{
 		return nullptr;
 	}
 
 	T* ret = reinterpret_cast<T*>(&_buffer[_pos]);
-	_pos += sizeof(T);
+	_pos += sizeof(T) * count;
 
 	return ret;
 }

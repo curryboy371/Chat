@@ -31,6 +31,9 @@ public:
     }
     virtual void OnRecvPacket(BYTE* buffer, int32 len)override
     {
+        BYTE tempBuffer[BUFFER_SIZE];
+        std::memcpy(tempBuffer, &buffer[0], len);
+
         ClientPacketHandler::HandlePacket(buffer, len);
     }
 
