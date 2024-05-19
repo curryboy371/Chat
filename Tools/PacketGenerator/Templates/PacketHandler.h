@@ -6,16 +6,19 @@ extern PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
 enum : uint16
 {
-	PKT_S_TEST = 1000,
-	PKT_S_LOGIN = 1001,
+{%- for pkt in parser.total_pkt %}
+	PKT_{{pkt.name}} = {{pkt.id}},
+{%- endfor %}
 };
 
 // Custom Handlers
 bool Handle_INVALID(PacketSessionRef& session, BYTE* buffer, int32 len);
-bool Handle_S_TEST(PacketSessionRef& session, Protocol::S_TEST& pkt);
-bool Handle_S_LOGIN(PacketSessionRef& session, Protocol::S_LOGIN& pkt);
 
-class ClientPacketHandler
+{%- for pkt in parser.recv_pkt %}
+bool Handle_{{pkt.name}}(PacketSessionRef& session, Protocol::{{pkt.name}}& pkt);
+{%- endfor %}
+
+class {{output}}
 {
 public:
 	static void Init()
@@ -24,8 +27,10 @@ public:
 		{
 			GPacketHandler[i] = Handle_INVALID;
 		}
-		GPacketHandler[PKT_S_TEST] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_TEST> (Handle_S_TEST, session, buffer, len); };
-		GPacketHandler[PKT_S_LOGIN] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::S_LOGIN> (Handle_S_LOGIN, session, buffer, len); };
+
+{%- for pkt in parser.recv_pkt %}
+		GPacketHandler[PKT_{{pkt.name}}] = [](PacketSessionRef& session, BYTE* buffer, int32 len) { return HandlePacket<Protocol::{{pkt.name}}> (Handle_{{pkt.name}}, session, buffer, len); };
+{%- endfor %}
 	}
 
 	static bool HandlePacket(PacketSessionRef& session, BYTE * buffer, int32 len)
@@ -33,6 +38,10 @@ public:
 		PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer);
 		return GPacketHandler[header->id](session, buffer, len);
 	}
+
+{%- for pkt in parser.send_pkt %}
+	static SendBufferRef MakeSendBuffer(Protocol::{{pkt.name}}& pkt) { return MakeSendBuffer(pkt, PKT_{{pkt.name}}); }
+{%- endfor %}
 
 private:
 	template<typename PacketType, typename ProcessFunc>

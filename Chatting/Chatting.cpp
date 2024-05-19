@@ -31,10 +31,8 @@ public:
     }
     virtual void OnRecvPacket(BYTE* buffer, int32 len)override
     {
-        BYTE tempBuffer[BUFFER_SIZE];
-        std::memcpy(tempBuffer, &buffer[0], len);
-
-        ClientPacketHandler::HandlePacket(buffer, len);
+        PacketSessionRef session = GetPacketSessionRef();
+        ClientPacketHandler::HandlePacket(session, buffer, len);
     }
 
     virtual void OnSend(int32 len)override
@@ -46,6 +44,7 @@ public:
 
 int main()
 {
+    ClientPacketHandler::Init();
     std::this_thread::sleep_for(std::chrono::seconds(1)); // 서버가 먼저 뜨게 1초 동안 대기
     
     NetAddress address = { L"127.0.0.1", 7777 };

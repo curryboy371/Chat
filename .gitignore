@@ -30,4 +30,8 @@ x64/
 *.lib.recipe
 *.pch
 
+
+*.spec
+*.pyc
 3rdparty/*
+Libraries/include/*

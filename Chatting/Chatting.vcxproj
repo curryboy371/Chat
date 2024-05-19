@@ -72,23 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)Binary\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)Libraries\include;$(SolutionDir)Server\Protocol;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libraries\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)Binary\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)Libraries\include;$(SolutionDir)Server\Protocol;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libraries\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)Binary\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)Libraries\include;$(SolutionDir)Server\Protocol;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libraries\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)Binary\$(Configuration)\</OutDir>
-    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)3rdparty\json-develop\include;$(SolutionDir)3rdparty\mysql-connector-c++-8.3.0-winx64\include;$(SolutionDir)ServerCore\;$(SolutionDir)3rdparty\boost_1_85_0;$(SolutionDir)3rdparty\boost_1_85_0\include;$(SolutionDir)Libraries\include;$(SolutionDir)Server\Protocol;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Libraries\Libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -164,11 +164,32 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Protocol\Enum.pb.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Protocol\Protocol.pb.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Protocol\Struct.pb.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingClient.h" />
     <ClInclude Include="ClientPacketHandler.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Protocol\Enum.pb.h" />
+    <ClInclude Include="Protocol\Protocol.pb.h" />
+    <ClInclude Include="Protocol\Struct.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

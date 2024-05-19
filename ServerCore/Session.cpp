@@ -445,14 +445,7 @@ int32 PacketSession::OnRecv(BYTE* buffer, int32 len)
             break;
         }
 
-        //BYTE* packetBuffer = &buffer[totalPacketLen + headerSize];
-
-        OnRecvPacket(&buffer[processLen], packetSize + headerSize);
-
-        // check 출력
-        BYTE tempBuffer[BUFFER_SIZE];
-        std::memcpy(tempBuffer, &buffer[processLen], packetSize);
-        //std::cout << "\nPacketSession::OnRecv : " << tempBuffer << packetSize + headerSize;
+        OnRecvPacket(&buffer[processLen], packetSize);
 
         processLen += headerSize + packetSize;
     }

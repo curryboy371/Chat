@@ -65,3 +65,4 @@ using std::vector;
 #define BUFFER_SIZE 256
 #define DATA_SIZE 16
 
+#define MAX_PACKET_LEN UINT16_MAX
