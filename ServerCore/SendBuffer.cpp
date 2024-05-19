@@ -83,7 +83,7 @@ SendBufferRef SendBufferManager::Open(uint32 size)
 		LSendBufferChunk->Reset();
 	}
 
-	std::cout << "\nFREE : ID-" << LThreadId<< " Size-" << LSendBufferChunk->FreeSize() << " Len-" << GetBufferChunkCount();
+	//std::cout << "\nFREE : ID-" << LThreadId<< " Size-" << LSendBufferChunk->FreeSize() << " Len-" << GetBufferChunkCount();
 
 	return LSendBufferChunk->Open(size);
 }

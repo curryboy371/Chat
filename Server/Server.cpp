@@ -50,13 +50,8 @@ int main()
 
         if (GSessionManager.GetSessionCount() > 0)
         {
-            Protocol::S_TEST pkt;
-            pkt.set_id(1);
-            pkt.set_hp(2);
-            pkt.set_attack(3);
-      
-            SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-            GSessionManager.Broadcast(sendBuffer);
+            //SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
+            //GSessionManager.Broadcast(sendBuffer);
         }
 
  

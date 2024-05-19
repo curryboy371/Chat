@@ -13,6 +13,9 @@
     <Filter Include="Packet">
       <UniqueIdentifier>{eb15f9b1-366c-4e31-9143-9935a5d1ebf5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GameContents">
+      <UniqueIdentifier>{71c6d9bb-8d47-476a-b471-b76383f6fbfc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Server.cpp">
@@ -48,6 +51,12 @@
     <ClCompile Include="Protocol\Protocol.pb.cc">
       <Filter>Packet</Filter>
     </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>GameContents</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>GameContents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingServer.h">
@@ -79,6 +88,12 @@
     </ClInclude>
     <ClInclude Include="Protocol\Protocol.pb.h">
       <Filter>Packet</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>GameContents</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>GameContents</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

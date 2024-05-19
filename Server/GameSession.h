@@ -16,5 +16,7 @@ public:
     virtual void OnRecvPacket(BYTE* buffer, int32 len);
 
 
+public:
+    std::vector<PlayerRef> _players;
 
 };

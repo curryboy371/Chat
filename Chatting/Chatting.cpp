@@ -22,7 +22,10 @@ public:
 
     virtual void OnConnected() override
     {
-        cout << "ServerSession::OnConnected " << endl;
+        //cout << "ServerSession::OnConnected " << endl;
+        Protocol::C_LOGIN pkt;
+        auto sendBuffer = ClientPacketHandler::MakeSendBuffer(pkt);
+        Send(sendBuffer);
     }
     virtual void OnDisconnected() override
     {
@@ -37,7 +40,7 @@ public:
 
     virtual void OnSend(int32 len)override
     {
-        cout << "\nOnSend Len = " << len;
+        //cout << "\nOnSend Len = " << len;
     }
 
 };
@@ -67,6 +70,18 @@ int main()
                 }
             });
     }
+
+    // main thread에서만... 
+    Protocol::C_CHAT chatPkt;
+    chatPkt.set_msg(u8"Im client !!!!");
+    auto sendBuffer = ClientPacketHandler::MakeSendBuffer(chatPkt);
+
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 1초 동안 대기
+        service->Broadcast(sendBuffer);
+    }
+
 
     GThreadManager->Join();
     

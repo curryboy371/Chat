@@ -289,7 +289,7 @@ void Session::RegisterSend()
     // WSASend는 Multi Thread에서 Safe한가?
     // 그렇지 않기 때문에 호출이전에 lock을 걸어줘야함.
     // 
-    std::cout << "\n Send Session ID " << GetSessionID();
+    //std::cout << "\n Send Session ID " << GetSessionID();
     if (SOCKET_ERROR == ::WSASend(_socket, wsaBufs.data(), static_cast<DWORD>(wsaBufs.size()), OUT & numOfByte, 0, &_sendEvent, nullptr))
     {
         int32 errCode = ::WSAGetLastError();
@@ -450,6 +450,6 @@ int32 PacketSession::OnRecv(BYTE* buffer, int32 len)
         processLen += headerSize + packetSize;
     }
 
-    std::cout << "\nPacketSession::OnRecv Total: " << len;
+    //std::cout << "\nPacketSession::OnRecv Total: " << len;
     return len;
 }

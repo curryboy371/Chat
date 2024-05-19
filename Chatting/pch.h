@@ -18,3 +18,4 @@
 
 // ���⿡ �̸� �������Ϸ��� ��� �߰�
 #include "CorePch.h"
+#include "Enum.pb.h"

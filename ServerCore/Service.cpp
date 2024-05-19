@@ -22,6 +22,18 @@ void Service::CloseService()
     // TODO
 }
 
+void Service::Broadcast(SendBufferRef sendBuffer)
+{
+    // WRITE_LOCK
+    MutexGuard LockGuard(_mtx);
+
+    for (const auto& session : _sessions)
+    {
+        session->Send(sendBuffer);
+    }
+
+}
+
 SessionRef Service::CreateSession()
 {
     SessionRef session = _sessionFactory();
