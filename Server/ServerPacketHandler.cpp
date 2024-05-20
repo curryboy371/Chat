@@ -3,6 +3,7 @@
 #include "GameSession.h"
 #include "Player.h"
 #include "Room.h"
+#include "Job.h"
 
 PacketHandlerFunc GPacketHandler[UINT16_MAX];
 
@@ -57,7 +58,8 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
     // validation
 
     PlayerRef player = gameSession->_players[index];
-    GRoom.Enter(player);
+    GRoom.PushJob(&Room::Enter, player);
+    //GRoom.PushJob(std::make_shared<EnterJob>(GRoom, player));
 
     Protocol::S_ENTER_GAME enterGamePkt;
     enterGamePkt.set_success(true);
@@ -74,7 +76,22 @@ bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt)
     chatPkt.set_msg(u8"broadcst : " + pkt.msg());
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(chatPkt);
 
-    GRoom.Broadcast(sendBuffer);
+
+    //void Room::Broadcast(SendBufferRef sendBuffer)
+    void (*tempFunction)(SendBufferRef) = nullptr;
+    
+    
+    FuncJob2<void, SendBufferRef> functor(tempFunction, sendBuffer);
+
+    
+    //MemberJob2<Room, void, SendBufferRef> functor(&GRoom, GRoom.Broadcast, sendBuffer);
+
+    //template<typename T, typename Ret, typename... Args>
+    // void PushJob(Ret(T:: * memFunc)(Args...), Args... args)
+    //GRoom.PushJob<Room, void, SendBufferRef>(&Room::Broadcast, sendBuffer);
+    GRoom.PushJob(&Room::Broadcast, sendBuffer);
+    
+    //GRoom.PushJob(std::make_shared<BroadcastJob>(GRoom, sendBuffer));
 
     return true;
 }

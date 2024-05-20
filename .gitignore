@@ -1,3 +1,10 @@
+
+
+
+#white list
+!Tools/PacketGenerator/Proto
+
+
 # Exclude Visual Studio temporary files and build results
 .vs/
 *.suo

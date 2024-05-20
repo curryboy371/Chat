@@ -18,6 +18,8 @@
 #include <string>
 #include <set>
 #include <queue>
+#include <tuple>
+#include <utility>
 
 #include <thread>
 #include <mutex>

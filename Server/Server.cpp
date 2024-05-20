@@ -13,12 +13,26 @@
 #include "ServerPacketHandler.h"
 #include "Protocol.pb.h"
 
+#include "Room.h"
+
 char sendData[DATA_SIZE] = "server_broad";
 
 CoreGlobal Core;
 
+
+void HealByValue(int64 target, int32 value)
+{
+    cout << "HealByValue " << target << " " << value << " " << endl;
+}
+
 int main()
 {
+
+    //GRoom.PushJob(&Room::Broadcast, sendBuffer);
+
+    GRoom.PushJob<void, int64, int32>(HealByValue, 4, 4);
+
+
     ServerPacketHandler::Init();
 
     NetAddress address = { L"127.0.0.1", 7777 };
@@ -50,14 +64,9 @@ int main()
 
         if (GSessionManager.GetSessionCount() > 0)
         {
-            //SendBufferRef sendBuffer = ServerPacketHandler::MakeSendBuffer(pkt);
-            //GSessionManager.Broadcast(sendBuffer);
+            GRoom.FlushJob();
         }
-
- 
     }
-
-
     GThreadManager->Join();
 
 	return 0;

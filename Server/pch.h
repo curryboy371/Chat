@@ -6,8 +6,7 @@
 
 #pragma comment(lib, "ServerCore\\Debug\\ServerCore.lib")
 #pragma comment(lib, "Protobuf\\Debug\\libprotobufd.lib")
-
-#pragma comment(lib, "ServerCore\\Debug\\mysqlcppconn.lib")
+#pragma comment(lib, "mysqlcppconn\\Debug\\mysqlcppconn.lib")
 #else
 #pragma comment(lib, "ServerCore\\Release\\ServerCore.lib")
 #pragma comment(lib, "Protobuf\\Release\\libprotobuf.lib")
