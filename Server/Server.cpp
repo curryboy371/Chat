@@ -15,23 +15,35 @@
 
 #include "Room.h"
 
-char sendData[DATA_SIZE] = "server_broad";
-
 CoreGlobal Core;
 
-
-void HealByValue(int64 target, int32 value)
+enum
 {
-    cout << "HealByValue " << target << " " << value << " " << endl;
+    WORKER_TICK = 64
+};
+
+// 모든 스레드에서 job queue를 골고루 처리하도록...
+
+void DoWorkerJob(ServerServiceRef& service)
+{
+    while (true)
+    {
+        LEndTickCount = ::GetTickCount64() + WORKER_TICK; // 여기도 타임아웃을 설정해둔다고 보면 됨.
+
+        // 네트워크 입출력 처리 > 인게임 로직 처리 
+        service->GetIocpCore()->Dispatch(10); // evevnt가 걸리지 않으면 대기하지 않도록 timeout 걸어줌
+
+        //타임아웃에 걸리면 글로벌 큐에 넣음
+        ThreadManager::DoGlobalQueueWork();
+    }
 }
 
 int main()
 {
-
-    //GRoom.PushJob(&Room::Broadcast, sendBuffer);
-
-    GRoom.PushJob<void, int64, int32>(HealByValue, 4, 4);
-
+    Protocol::S_CHAT chatPkt;
+    chatPkt.set_msg(u8"broadcst : ");
+    auto sendBuffer = ServerPacketHandler::MakeSendBuffer(chatPkt);
+    GRoom->DoAsync(&Room::Broadcast, sendBuffer);
 
     ServerPacketHandler::Init();
 
@@ -47,26 +59,15 @@ int main()
 
     for (int32 i = 0; i < 5; ++i)
     {
-        GThreadManager->Launch([=]()
+        GThreadManager->Launch([&service]()
             {
-                while (true)
-                {
-                    service->GetIocpCore()->Dispatch();
-                }
+                DoWorkerJob(service);
             });
     }
 
+    DoWorkerJob(service);
 
-    // main thread에서만... 
-    while (true)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(300)); // 1초 동안 대기
 
-        if (GSessionManager.GetSessionCount() > 0)
-        {
-            GRoom.FlushJob();
-        }
-    }
     GThreadManager->Join();
 
 	return 0;

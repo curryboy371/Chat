@@ -69,7 +69,7 @@ class ServerService : public Service
 {
 public:
 	ServerService(NetAddress address, IocpCoreRef core, SessionFactory factory, int32 maxSessionCount = 1);
-	virtual ~ServerService() {}
+	virtual ~ServerService();
 
 	virtual bool Start() override;
 	virtual void CloseService();

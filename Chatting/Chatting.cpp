@@ -45,41 +45,55 @@ public:
 
 };
 
+using CallbackType = std::function<void()>;
+
+class Callback
+{
+public:
+    Callback(CallbackType&& callback)
+        :_callback(std::move(callback))
+    {
+
+    }
+
+    void Excute()
+    {
+        _callback();
+    }
+
+private:
+    CallbackType _callback;
+};
+
 int main()
 {
     ClientPacketHandler::Init();
-    std::this_thread::sleep_for(std::chrono::seconds(1)); // 서버가 먼저 뜨게 1초 동안 대기
-    
-    NetAddress address = { L"127.0.0.1", 7777 };
-    SessionFactory factory = []() {
-        return std::make_shared<ServerSession>(); // 세션을 생성하여 반환
-    };
-    
-    int32 SessionCount = MAX_CLIENT_SESSION;
 
-    ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
-    ASSERT_CRASH(service->Start());
-    
-    for (int32 i = 0; i < 8; ++i)
-    {
-        GThreadManager->Launch([=]()
-            {
-                while (true)
-                {
-                    service->GetIocpCore()->Dispatch();
-                }
-            });
-    }
-
-    // main thread에서만... 
-    Protocol::C_CHAT chatPkt;
-    chatPkt.set_msg(u8"Im client !!!!");
-    auto sendBuffer = ClientPacketHandler::MakeSendBuffer(chatPkt);
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 1초 동안 대기
-        service->Broadcast(sendBuffer);
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // 서버가 먼저 뜨게 1초 동안 대기
+
+        NetAddress address = { L"127.0.0.1", 7777 };
+        SessionFactory factory = []() {
+            return std::make_shared<ServerSession>(); // 세션을 생성하여 반환
+        };
+
+        int32 SessionCount = 1;
+
+        ClientServiceRef service = std::make_shared<ClientService>(address, std::make_shared<IocpCore>(), factory, SessionCount);
+        ASSERT_CRASH(service->Start());
+
+        for (int32 i = 0; i < 1; ++i)
+        {
+            GThreadManager->Launch([=]()
+                {
+                    while (true)
+                    {
+                        service->GetIocpCore()->Dispatch();
+                    }
+                });
+        }
     }
 
 

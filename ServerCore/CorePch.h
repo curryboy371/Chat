@@ -44,6 +44,8 @@
 #include "BufferWriter.h"
 #include "Session.h"
 
+#include "JobQueue.h"
+
 #pragma comment(lib, "Ws2_32.lib")
 
 

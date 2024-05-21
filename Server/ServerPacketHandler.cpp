@@ -57,14 +57,26 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 
     // validation
 
-    PlayerRef player = gameSession->_players[index];
-    GRoom.PushJob(&Room::Enter, player);
-    //GRoom.PushJob(std::make_shared<EnterJob>(GRoom, player));
 
+    gameSession->_currentPlayer = gameSession->_players[index]; // shared ptr
+    gameSession->_room = GRoom; //weak ptr
+
+    //PlayerRef player = gameSession->_players[index];
+    GRoom->DoAsync(&Room::Enter, gameSession->_currentPlayer);
+    
     Protocol::S_ENTER_GAME enterGamePkt;
     enterGamePkt.set_success(true);
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
-    player->ownerSession->Send(sendBuffer);
+    gameSession->_currentPlayer->ownerSession->Send(sendBuffer);
+
+    //PlayerRef player = gameSession->_players[index];
+    //GRoom->DoAsync(&Room::Enter, player);
+    ////GRoom.PushJob(std::make_shared<EnterJob>(GRoom, player));
+    //
+    //Protocol::S_ENTER_GAME enterGamePkt;
+    //enterGamePkt.set_success(true);
+    //auto sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
+    //player->ownerSession->Send(sendBuffer);
     return true;
 }
 
@@ -78,18 +90,16 @@ bool Handle_C_CHAT(PacketSessionRef& session, Protocol::C_CHAT& pkt)
 
 
     //void Room::Broadcast(SendBufferRef sendBuffer)
-    void (*tempFunction)(SendBufferRef) = nullptr;
+    //void (*tempFunction)(SendBufferRef) = nullptr;
     
-    
-    FuncJob2<void, SendBufferRef> functor(tempFunction, sendBuffer);
-
+    //FuncJob2<void, SendBufferRef> functor(tempFunction, sendBuffer);
     
     //MemberJob2<Room, void, SendBufferRef> functor(&GRoom, GRoom.Broadcast, sendBuffer);
 
     //template<typename T, typename Ret, typename... Args>
     // void PushJob(Ret(T:: * memFunc)(Args...), Args... args)
     //GRoom.PushJob<Room, void, SendBufferRef>(&Room::Broadcast, sendBuffer);
-    GRoom.PushJob(&Room::Broadcast, sendBuffer);
+    GRoom->DoAsync(&Room::Broadcast, sendBuffer);
     
     //GRoom.PushJob(std::make_shared<BroadcastJob>(GRoom, sendBuffer));
 

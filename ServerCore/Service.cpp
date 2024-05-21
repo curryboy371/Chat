@@ -99,6 +99,11 @@ ServerService::ServerService(NetAddress address, IocpCoreRef core, SessionFactor
 
 }
 
+ServerService::~ServerService()
+{
+    cout << "test" << endl;
+}
+
 bool ServerService::Start()
 {
     if (CanStart() == false)

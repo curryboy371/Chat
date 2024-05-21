@@ -47,8 +47,10 @@ public:
 	static void InitTLS();
 	static void DestroyTLS();
 
+	static void DoGlobalQueueWork();
+
 private:
 	Mutex			_lock;
-	vector<thread>	_threads;
+	std::vector<std::thread>	_threads;
 };
 

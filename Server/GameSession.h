@@ -19,4 +19,7 @@ public:
 public:
     std::vector<PlayerRef> _players;
 
+    PlayerRef _currentPlayer;
+    std::weak_ptr<class Room> _room;
+
 };
