@@ -3,7 +3,7 @@
 #include "GlobalQueue.h"
 
 
-void JobQueue::Push(JobRef&& job)
+void JobQueue::Push(JobRef job, bool pushOnly/* = false */)
 {
 	// 순서 주의
 	const int32 preCount = _jobCount.fetch_add(1);
@@ -14,7 +14,7 @@ void JobQueue::Push(JobRef&& job)
 	{
 		// 이미 실행중인 JobQueue가 없으면 실행
 		// 이렇게 하면 실행순서에 대한 보장은 없을 것임.
-		if (LCurrentJobQueue == nullptr)
+		if (LCurrentJobQueue == nullptr && pushOnly == false)
 		{
 			Excute();
 		}

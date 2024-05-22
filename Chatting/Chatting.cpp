@@ -70,7 +70,7 @@ int main()
     ClientPacketHandler::Init();
 
 
-    while (true)
+    //while (true)
     {
         std::this_thread::sleep_for(std::chrono::seconds(1)); // 서버가 먼저 뜨게 1초 동안 대기
 

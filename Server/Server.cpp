@@ -14,6 +14,7 @@
 #include "Protocol.pb.h"
 
 #include "Room.h"
+#include "JobTimer.h"
 
 CoreGlobal Core;
 
@@ -33,6 +34,9 @@ void DoWorkerJob(ServerServiceRef& service)
         // 네트워크 입출력 처리 > 인게임 로직 처리 
         service->GetIocpCore()->Dispatch(10); // evevnt가 걸리지 않으면 대기하지 않도록 timeout 걸어줌
 
+        // 예약된 일감 처리
+        ThreadManager::DistributeReservedJobs();
+
         //타임아웃에 걸리면 글로벌 큐에 넣음
         ThreadManager::DoGlobalQueueWork();
     }
@@ -40,6 +44,8 @@ void DoWorkerJob(ServerServiceRef& service)
 
 int main()
 {
+
+
     Protocol::S_CHAT chatPkt;
     chatPkt.set_msg(u8"broadcst : ");
     auto sendBuffer = ServerPacketHandler::MakeSendBuffer(chatPkt);
@@ -65,7 +71,16 @@ int main()
             });
     }
 
-    DoWorkerJob(service);
+    //main thread
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        // DO Timer
+        GRoom->DoTimer(10, [] { cout << "Hello 10" << endl; });
+        GRoom->DoTimer(20, [] { cout << "Hello 20" << endl; });
+        GRoom->DoTimer(30, [] { cout << "Hello 30" << endl; });
+    }
+    //DoWorkerJob(service);
 
 
     GThreadManager->Join();

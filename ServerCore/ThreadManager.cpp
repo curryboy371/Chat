@@ -3,6 +3,7 @@
 #include "CoreGlobal.h"
 #include "CoreTLS.h"
 
+#include "JobTimer.h"
 #include "GlobalQueue.h"
 
 ThreadManager::ThreadManager()
@@ -51,6 +52,13 @@ void ThreadManager::InitTLS()
 
 void ThreadManager::DestroyTLS()
 {
+
+}
+
+void ThreadManager::DistributeReservedJobs()
+{
+	const uint64 now = ::GetTickCount64();
+	GJobTimer->Distribute(now);
 }
 
 void ThreadManager::DoGlobalQueueWork()

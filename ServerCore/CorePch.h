@@ -1,5 +1,9 @@
 #pragma once
 
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
+
 #include <winsock2.h>
 #include <ws2tcpip.h> 
 #include <windows.h>
@@ -15,7 +19,6 @@
 #include <vector>
 #include <array>
 #include <map>
-#include <string>
 #include <set>
 #include <queue>
 #include <tuple>
@@ -47,6 +50,8 @@
 #include "JobQueue.h"
 
 #pragma comment(lib, "Ws2_32.lib")
+
+
 
 
 using json = nlohmann::json;

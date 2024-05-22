@@ -3,6 +3,7 @@
 #include "GameSessionManager.h"
 #include "TimeCheckManager.h"
 #include "ServerPacketHandler.h"
+#include "Room.h"
 
 void GameSession::OnConnected()
 {
@@ -29,6 +30,16 @@ void GameSession::OnDisconnected()
 {
     GameSessionRef session = std::static_pointer_cast<GameSession>(shared_from_this());
     GSessionManager.Remove(session);
+
+    if (_currentPlayer)
+    {
+        if (auto room = _room.lock())
+        {
+            room->DoAsync(&Room::Leave, _currentPlayer);
+        }
+    }
+    _currentPlayer = nullptr;
+    _players.clear();
 }
 
 void GameSession::OnSend(int32 len)

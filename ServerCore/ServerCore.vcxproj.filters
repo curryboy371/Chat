@@ -81,7 +81,12 @@
     <ClInclude Include="LockQueue.h">
       <Filter>Job</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalQueue.h" />
+    <ClInclude Include="GlobalQueue.h">
+      <Filter>Job</Filter>
+    </ClInclude>
+    <ClInclude Include="JobTimer.h">
+      <Filter>Job</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -144,6 +149,11 @@
     <ClCompile Include="LockQueue.cpp">
       <Filter>Job</Filter>
     </ClCompile>
-    <ClCompile Include="GlobalQueue.cpp" />
+    <ClCompile Include="GlobalQueue.cpp">
+      <Filter>Job</Filter>
+    </ClCompile>
+    <ClCompile Include="JobTimer.cpp">
+      <Filter>Job</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

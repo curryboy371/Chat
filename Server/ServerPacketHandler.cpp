@@ -52,16 +52,14 @@ bool Handle_C_LOGIN(PacketSessionRef& session, Protocol::C_LOGIN& pkt)
 bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
 {
     GameSessionRef gameSession = std::static_pointer_cast<GameSession>(session);
-
     uint64 index = pkt.playerindex();
 
     // validation
 
-
+    // gamesession과 player가 순환참조되느 상황이므로..
+    // gamesessino에서 정리할때 player도 정리해줌.
     gameSession->_currentPlayer = gameSession->_players[index]; // shared ptr
     gameSession->_room = GRoom; //weak ptr
-
-    //PlayerRef player = gameSession->_players[index];
     GRoom->DoAsync(&Room::Enter, gameSession->_currentPlayer);
     
     Protocol::S_ENTER_GAME enterGamePkt;
@@ -72,11 +70,11 @@ bool Handle_C_ENTER_GAME(PacketSessionRef& session, Protocol::C_ENTER_GAME& pkt)
     //PlayerRef player = gameSession->_players[index];
     //GRoom->DoAsync(&Room::Enter, player);
     ////GRoom.PushJob(std::make_shared<EnterJob>(GRoom, player));
-    //
     //Protocol::S_ENTER_GAME enterGamePkt;
     //enterGamePkt.set_success(true);
     //auto sendBuffer = ServerPacketHandler::MakeSendBuffer(enterGamePkt);
     //player->ownerSession->Send(sendBuffer);
+
     return true;
 }
 
